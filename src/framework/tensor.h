@@ -1,6 +1,6 @@
 #pragma once
-#include "framework/dtype.hpp"
-#include "framework/shape.hpp"
+#include "framework/dtype.h"
+#include "framework/shape.h"
 
 namespace chatty {
 class Tensor {

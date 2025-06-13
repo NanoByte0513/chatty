@@ -1,7 +1,7 @@
 #pragma once
-#include "framework/status.hpp"
-#include "framework/tensor.hpp"
-#include "framework/shape.hpp"
+#include "framework/status.h"
+#include "framework/tensor.h"
+#include "framework/shape.h"
 
 namespace chatty {
 class iChattyModel {
