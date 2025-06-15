@@ -1,4 +1,4 @@
-namespace chatty;
+namespace chatty_fbs;
 
 enum DType:byte {
     NONE = 0,

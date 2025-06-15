@@ -11,12 +11,14 @@ public:
 
 private:
     const void* p_data_;
-    const Model* p_model_;
+    const chatty_fbs::Model* p_model_;
     
 };
 
 class ChattyModel : public iChattyModel {
 public:
+    ChattyModel();
+    ~ChattyModel();
     Status init();
 };
 
