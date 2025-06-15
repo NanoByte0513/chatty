@@ -9,9 +9,11 @@
 
 namespace chatty {
 
+#define MAGIC_NUMBER 607;
+
 class FBS_ScaleInfo_t {
 public:
-    FBS_ScaleInfo_t(chatty_fbs::ScaleInfo scale_info);
+    FBS_ScaleInfo_t(const chatty_fbs::ScaleInfo* scale_info);
     ~FBS_ScaleInfo_t();
     const char* name() const;
     Shape shape() const;
@@ -39,12 +41,12 @@ public:
     float* dataAsFloat() const;
 
 private:
-    const chatty_fbs::ScaleInfo scale_info_;
+    const chatty_fbs::ScaleInfo* scale_info_;
 };
 
 class FBS_Tensor_t {
 public:
-    FBS_Tensor_t(chatty_fbs::Tensor tensor);
+    FBS_Tensor_t(const chatty_fbs::Tensor* tensor);
     ~FBS_Tensor_t();
     const char* name() const;
     Shape shape() const;
@@ -72,12 +74,12 @@ public:
     float* dataAsFloat() const;
 
 private:
-    const chatty_fbs::Tensor tensor_;
+    const chatty_fbs::Tensor* tensor_;
 };
 
 class FBS_Norm_t {
 public:
-    FBS_Norm_t(chatty_fbs::Norm norm);
+    FBS_Norm_t(const chatty_fbs::Norm* norm);
     ~FBS_Norm_t();
     const char* type() const;
     FBS_Tensor_t weight() const;
@@ -87,12 +89,12 @@ public:
     FBS_ScaleInfo_t scale_o() const;
 
 private:
-    const chatty_fbs::Norm norm_;
+    const chatty_fbs::Norm* norm_;
 };
 
 class FBS_LinearLayer_t {
 public:
-    FBS_LinearLayer_t(chatty_fbs::LinearLayer linear_layer);
+    FBS_LinearLayer_t(const chatty_fbs::LinearLayer* linear_layer);
     ~FBS_LinearLayer_t();
     FBS_Tensor_t weight() const;
     FBS_Tensor_t bias() const;
@@ -101,12 +103,12 @@ public:
     FBS_ScaleInfo_t scale_o() const;
 
 private:
-    const chatty_fbs::LinearLayer linear_layer_;
+    const chatty_fbs::LinearLayer* linear_layer_;
 };
 
 class FBS_AttentionLayer_t {
 public:
-    FBS_AttentionLayer_t(chatty_fbs::AttentionLayer attn_layer);
+    FBS_AttentionLayer_t(const chatty_fbs::AttentionLayer* attn_layer);
     ~FBS_AttentionLayer_t();
     FBS_LinearLayer_t k_proj() const;
     FBS_LinearLayer_t v_proj() const;
@@ -115,12 +117,12 @@ public:
     FBS_Norm_t norm() const;
 
 private:
-    const chatty_fbs::AttentionLayer attn_layer_;
+    const chatty_fbs::AttentionLayer* attn_layer_;
 };
 
 class FBS_FFNLayer_t {
 public:
-    FBS_FFNLayer_t(chatty_fbs::FFNLayer ffn_layer);
+    FBS_FFNLayer_t(const chatty_fbs::FFNLayer* ffn_layer);
     ~FBS_FFNLayer_t();
     FBS_LinearLayer_t up_proj() const;
     FBS_LinearLayer_t gate_proj() const;
@@ -129,39 +131,56 @@ public:
     chatty_fbs::ActLayer act_layer() const;
 
 private:
-    const chatty_fbs::FFNLayer ffn_layer_;
+    const chatty_fbs::FFNLayer* ffn_layer_;
 };
 
 class FBS_TransformerLayer_t {
 public:
-    FBS_TransformerLayer_t();
+    FBS_TransformerLayer_t(const chatty_fbs::TransformerLayer* trans_layer);
     ~FBS_TransformerLayer_t();
     int32_t layer_idx() const;
     FBS_AttentionLayer_t attn_layer() const;
     FBS_FFNLayer_t ffn_layer() const;
 
 private:
-    const chatty_fbs::TransformerLayer trans_layer_;
+    const chatty_fbs::TransformerLayer* trans_layer_;
 };
 
 class iChattyModel {
 public:
     virtual Status init() = 0;
+    virtual void destroy() = 0;
     virtual Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const = 0;
     virtual Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const = 0;
 };
 
 class ChattyModel : public iChattyModel {
 public:
+    struct Header {
+        int32_t magic_number;
+        size_t data_size; // flatbuffers info size
+        size_t weight_size;
+    };
     ChattyModel();
     ~ChattyModel();
     Status init();
+    void destroy();
+    Status load_params(const char* res_path, size_t offset=0, size_t length=0);
     Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const;
     Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const;
-    int32_t num_layer() const;
+
+    int32_t                num_layer() const;
     FBS_TransformerLayer_t layer(int32_t layer_idx) const;
+    FBS_LinearLayer_t      input_embed() const;
+    FBS_Norm_t             output_norm() const;
+    FBS_LinearLayer_t      output_embed() const;
+    int32_t                head_dim() const;
+    int32_t                kv_num_heads() const;
+    int32_t                q_num_heads() const;
+
 private:
-    const void* p_data_;
+    int32_t            fileDescriptor_;
+    const void*              p_data_;
     const chatty_fbs::Model* p_model_;
 };
 
