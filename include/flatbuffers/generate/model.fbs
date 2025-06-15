@@ -31,19 +31,20 @@ enum ActLayer:byte {
     SOFTMAX = 6,
 }
 
+table ScaleInfo {
+    name: string(required);
+    shape: [int] (required);
+    dtype: DType;
+    offset: int64;
+    zero_point: int;
+}
+
 table Tensor {
     name: string(required);
     shape: [int] (required);
     dtype: DType;
     offset: int64;
     scale: ScaleInfo;
-}
-
-table ScaleInfo {
-    name: string(required);
-    scale: float;
-    zero_point: int;
-    dtype: DType;
 }
 
 table Norm {
