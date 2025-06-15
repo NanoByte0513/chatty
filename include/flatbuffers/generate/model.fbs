@@ -59,7 +59,7 @@ table Norm {
 table LinearLayer {
     weight: Tensor(required);
     bias: Tensor(required);
-    activation: ActivationBits;
+    act_bits: ActivationBits;
     scale_x: ScaleInfo;
     scale_o: ScaleInfo;
 }
@@ -81,6 +81,7 @@ table FFNLayer {
 }
 
 table TransformerLayer {
+    layer_idx: int;
     attn_layer: AttentionLayer(required);
     ffn_layer: FFNLayer(required);
 }

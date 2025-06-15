@@ -544,7 +544,7 @@ struct LinearLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_WEIGHT = 4,
     VT_BIAS = 6,
-    VT_ACTIVATION = 8,
+    VT_ACT_BITS = 8,
     VT_SCALE_X = 10,
     VT_SCALE_O = 12
   };
@@ -554,8 +554,8 @@ struct LinearLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const chatty_fbs::Tensor *bias() const {
     return GetPointer<const chatty_fbs::Tensor *>(VT_BIAS);
   }
-  chatty_fbs::ActivationBits activation() const {
-    return static_cast<chatty_fbs::ActivationBits>(GetField<int8_t>(VT_ACTIVATION, 0));
+  chatty_fbs::ActivationBits act_bits() const {
+    return static_cast<chatty_fbs::ActivationBits>(GetField<int8_t>(VT_ACT_BITS, 0));
   }
   const chatty_fbs::ScaleInfo *scale_x() const {
     return GetPointer<const chatty_fbs::ScaleInfo *>(VT_SCALE_X);
@@ -569,7 +569,7 @@ struct LinearLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(weight()) &&
            VerifyOffsetRequired(verifier, VT_BIAS) &&
            verifier.VerifyTable(bias()) &&
-           VerifyField<int8_t>(verifier, VT_ACTIVATION, 1) &&
+           VerifyField<int8_t>(verifier, VT_ACT_BITS, 1) &&
            VerifyOffset(verifier, VT_SCALE_X) &&
            verifier.VerifyTable(scale_x()) &&
            VerifyOffset(verifier, VT_SCALE_O) &&
@@ -588,8 +588,8 @@ struct LinearLayerBuilder {
   void add_bias(::flatbuffers::Offset<chatty_fbs::Tensor> bias) {
     fbb_.AddOffset(LinearLayer::VT_BIAS, bias);
   }
-  void add_activation(chatty_fbs::ActivationBits activation) {
-    fbb_.AddElement<int8_t>(LinearLayer::VT_ACTIVATION, static_cast<int8_t>(activation), 0);
+  void add_act_bits(chatty_fbs::ActivationBits act_bits) {
+    fbb_.AddElement<int8_t>(LinearLayer::VT_ACT_BITS, static_cast<int8_t>(act_bits), 0);
   }
   void add_scale_x(::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale_x) {
     fbb_.AddOffset(LinearLayer::VT_SCALE_X, scale_x);
@@ -614,7 +614,7 @@ inline ::flatbuffers::Offset<LinearLayer> CreateLinearLayer(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<chatty_fbs::Tensor> weight = 0,
     ::flatbuffers::Offset<chatty_fbs::Tensor> bias = 0,
-    chatty_fbs::ActivationBits activation = chatty_fbs::ActivationBits_INT4,
+    chatty_fbs::ActivationBits act_bits = chatty_fbs::ActivationBits_INT4,
     ::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale_x = 0,
     ::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale_o = 0) {
   LinearLayerBuilder builder_(_fbb);
@@ -622,7 +622,7 @@ inline ::flatbuffers::Offset<LinearLayer> CreateLinearLayer(
   builder_.add_scale_x(scale_x);
   builder_.add_bias(bias);
   builder_.add_weight(weight);
-  builder_.add_activation(activation);
+  builder_.add_act_bits(act_bits);
   return builder_.Finish();
 }
 
@@ -818,9 +818,13 @@ struct TransformerLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return TransformerLayerTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ATTN_LAYER = 4,
-    VT_FFN_LAYER = 6
+    VT_LAYER_IDX = 4,
+    VT_ATTN_LAYER = 6,
+    VT_FFN_LAYER = 8
   };
+  int32_t layer_idx() const {
+    return GetField<int32_t>(VT_LAYER_IDX, 0);
+  }
   const chatty_fbs::AttentionLayer *attn_layer() const {
     return GetPointer<const chatty_fbs::AttentionLayer *>(VT_ATTN_LAYER);
   }
@@ -829,6 +833,7 @@ struct TransformerLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_LAYER_IDX, 4) &&
            VerifyOffsetRequired(verifier, VT_ATTN_LAYER) &&
            verifier.VerifyTable(attn_layer()) &&
            VerifyOffsetRequired(verifier, VT_FFN_LAYER) &&
@@ -841,6 +846,9 @@ struct TransformerLayerBuilder {
   typedef TransformerLayer Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_layer_idx(int32_t layer_idx) {
+    fbb_.AddElement<int32_t>(TransformerLayer::VT_LAYER_IDX, layer_idx, 0);
+  }
   void add_attn_layer(::flatbuffers::Offset<chatty_fbs::AttentionLayer> attn_layer) {
     fbb_.AddOffset(TransformerLayer::VT_ATTN_LAYER, attn_layer);
   }
@@ -862,11 +870,13 @@ struct TransformerLayerBuilder {
 
 inline ::flatbuffers::Offset<TransformerLayer> CreateTransformerLayer(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t layer_idx = 0,
     ::flatbuffers::Offset<chatty_fbs::AttentionLayer> attn_layer = 0,
     ::flatbuffers::Offset<chatty_fbs::FFNLayer> ffn_layer = 0) {
   TransformerLayerBuilder builder_(_fbb);
   builder_.add_ffn_layer(ffn_layer);
   builder_.add_attn_layer(attn_layer);
+  builder_.add_layer_idx(layer_idx);
   return builder_.Finish();
 }
 
@@ -1202,7 +1212,7 @@ inline const ::flatbuffers::TypeTable *LinearLayerTypeTable() {
   static const char * const names[] = {
     "weight",
     "bias",
-    "activation",
+    "act_bits",
     "scale_x",
     "scale_o"
   };
@@ -1265,6 +1275,7 @@ inline const ::flatbuffers::TypeTable *FFNLayerTypeTable() {
 
 inline const ::flatbuffers::TypeTable *TransformerLayerTypeTable() {
   static const ::flatbuffers::TypeCode type_codes[] = {
+    { ::flatbuffers::ET_INT, 0, -1 },
     { ::flatbuffers::ET_SEQUENCE, 0, 0 },
     { ::flatbuffers::ET_SEQUENCE, 0, 1 }
   };
@@ -1273,11 +1284,12 @@ inline const ::flatbuffers::TypeTable *TransformerLayerTypeTable() {
     chatty_fbs::FFNLayerTypeTable
   };
   static const char * const names[] = {
+    "layer_idx",
     "attn_layer",
     "ffn_layer"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_TABLE, 2, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_TABLE, 3, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }

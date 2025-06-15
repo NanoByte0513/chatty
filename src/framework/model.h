@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "framework/status.h"
 #include "framework/tensor.h"
 #include "framework/shape.h"
@@ -10,6 +11,8 @@ namespace chatty {
 
 class FBS_ScaleInfo_t {
 public:
+    FBS_ScaleInfo_t(chatty_fbs::ScaleInfo scale_info);
+    ~FBS_ScaleInfo_t();
     const char* name() const;
     Shape shape() const;
     DType dtype() const;
@@ -36,11 +39,13 @@ public:
     float* dataAsFloat() const;
 
 private:
-    const void* p_data_ = nullptr;
+    const chatty_fbs::ScaleInfo scale_info_;
 };
 
 class FBS_Tensor_t {
 public:
+    FBS_Tensor_t(chatty_fbs::Tensor tensor);
+    ~FBS_Tensor_t();
     const char* name() const;
     Shape shape() const;
     DType dtype() const;
@@ -67,16 +72,83 @@ public:
     float* dataAsFloat() const;
 
 private:
-    const void* p_data_ = nullptr;
+    const chatty_fbs::Tensor tensor_;
+};
+
+class FBS_Norm_t {
+public:
+    FBS_Norm_t(chatty_fbs::Norm norm);
+    ~FBS_Norm_t();
+    const char* type() const;
+    FBS_Tensor_t weight() const;
+    FBS_Tensor_t bias() const;
+    float epsilon() const;
+    FBS_ScaleInfo_t scale_x() const;
+    FBS_ScaleInfo_t scale_o() const;
+
+private:
+    const chatty_fbs::Norm norm_;
+};
+
+class FBS_LinearLayer_t {
+public:
+    FBS_LinearLayer_t(chatty_fbs::LinearLayer linear_layer);
+    ~FBS_LinearLayer_t();
+    FBS_Tensor_t weight() const;
+    FBS_Tensor_t bias() const;
+    chatty_fbs::ActivationBits act_bits() const;
+    FBS_ScaleInfo_t scale_x() const;
+    FBS_ScaleInfo_t scale_o() const;
+
+private:
+    const chatty_fbs::LinearLayer linear_layer_;
+};
+
+class FBS_AttentionLayer_t {
+public:
+    FBS_AttentionLayer_t(chatty_fbs::AttentionLayer attn_layer);
+    ~FBS_AttentionLayer_t();
+    FBS_LinearLayer_t k_proj() const;
+    FBS_LinearLayer_t v_proj() const;
+    FBS_LinearLayer_t q_proj() const;
+    FBS_LinearLayer_t o_proj() const;
+    FBS_Norm_t norm() const;
+
+private:
+    const chatty_fbs::AttentionLayer attn_layer_;
+};
+
+class FBS_FFNLayer_t {
+public:
+    FBS_FFNLayer_t(chatty_fbs::FFNLayer ffn_layer);
+    ~FBS_FFNLayer_t();
+    FBS_LinearLayer_t up_proj() const;
+    FBS_LinearLayer_t gate_proj() const;
+    FBS_LinearLayer_t down_proj() const;
+    FBS_Norm_t norm() const;
+    chatty_fbs::ActLayer act_layer() const;
+
+private:
+    const chatty_fbs::FFNLayer ffn_layer_;
+};
+
+class FBS_TransformerLayer_t {
+public:
+    FBS_TransformerLayer_t();
+    ~FBS_TransformerLayer_t();
+    int32_t layer_idx() const;
+    FBS_AttentionLayer_t attn_layer() const;
+    FBS_FFNLayer_t ffn_layer() const;
+
+private:
+    const chatty_fbs::TransformerLayer trans_layer_;
 };
 
 class iChattyModel {
 public:
     virtual Status init() = 0;
-
-private:
-    
-    
+    virtual Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const = 0;
+    virtual Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const = 0;
 };
 
 class ChattyModel : public iChattyModel {
@@ -84,6 +156,10 @@ public:
     ChattyModel();
     ~ChattyModel();
     Status init();
+    Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const;
+    Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const;
+    int32_t num_layer() const;
+    FBS_TransformerLayer_t layer(int32_t layer_idx) const;
 private:
     const void* p_data_;
     const chatty_fbs::Model* p_model_;
