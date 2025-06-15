@@ -1,0 +1,98 @@
+namespace chatty;
+
+enum DType:byte {
+    NONE = 0,
+    INT8 = 1,
+    UINT8 = 2,
+    INT16 = 3,
+    UINT16 = 4,
+    INT32 = 5,
+    UINT32 = 6,
+    INT64 = 7,
+    UINT64 = 8,
+    FLOAT32 = 9,
+    FLOAT16 = 10,
+    FLOAT8 = 11,
+    BFLOAT16 = 12,
+    INT4 = 13,
+}
+
+enum ActivationBits:byte {
+    INT4=0, INT8=1, INT16=2, FP16=3,
+}
+
+enum ActLayer:byte {
+    NONE = 0,
+    RELU = 1,
+    GELU = 2,
+    SWISH = 3,
+    SIGMOID = 4,
+    TANH = 5,
+    SOFTMAX = 6,
+}
+
+table Tensor {
+    name: string(required);
+    shape: [int] (required);
+    dtype: DType;
+    offset: int64;
+    scale: ScaleInfo;
+}
+
+table ScaleInfo {
+    name: string(required);
+    scale: float;
+    zero_point: int;
+    dtype: DType;
+}
+
+table Norm {
+    type: string(required);
+    weight: Tensor(required);
+    bias: Tensor(required);
+    epsilon: float ;
+    scale_x: ScaleInfo;
+    scale_o: ScaleInfo;
+}
+
+table LinearLayer {
+    weight: Tensor(required);
+    bias: Tensor(required);
+    activation: ActivationBits;
+    scale_x: ScaleInfo;
+    scale_o: ScaleInfo;
+}
+
+table AttentionLayer {
+    k_proj: LinearLayer(required);
+    v_proj: LinearLayer(required);
+    q_proj: LinearLayer(required);
+    o_proj: LinearLayer(required);
+    norm: Norm(required);
+}
+
+table FFNLayer {
+    up_proj: LinearLayer(required);
+    down_proj: LinearLayer(required);
+    gate_proj: LinearLayer(required);
+    norm: Norm(required);
+    act_layer: ActLayer;
+}
+
+table TransformerLayer {
+    attn_layer: AttentionLayer(required);
+    ffn_layer: FFNLayer(required);
+}
+
+table Model {
+    tokenizers: [byte] (required);
+    input_embed: LinearLayer(required);
+    output_norm: Norm(required);
+    output_embed: LinearLayer;
+    layers: [TransformerLayer] (required);
+    head_dim: int;
+    kv_num_heads: int;
+    q_num_heads: int;
+}
+
+root_type Model;

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(my_cuda_app LANGUAGES CUDA CXX)
+project(chatty LANGUAGES CUDA CXX)
 
 set(CHATTY_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -7,12 +7,10 @@ if(CHATTY_CUDA_ENABLED)
     message("CHATTY_CUDA_ENABLED")
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    target_include_directories(my_cuda_app PRIVATE ${CHATTY_ROOT_DIR}/include)
+    target_include_directories(chatty PRIVATE ${CHATTY_ROOT_DIR}/include)
     add_subdirectory(executor/cuda/)
     set(TARGET_OBJECTS ${TARGET_OBJECTS} "$<TARGET_OBJECTS:chatty_cuda>")
-endif()
-
-if(CHATTY_x86_ENABLED)
+elseif(CHATTY_x86_ENABLED)
     message("CHATTY_x86_ENABLED")
 endif()
 
@@ -30,7 +28,7 @@ if(CHATTY_STATIC_LIB)
     add_library(chatty STATIC ${TOTAL_SRC_LIST} ${TARGET_OBJECTS})
 else()
     add_library(chatty SHARED ${TOTAL_SRC_LIST} ${TARGET_OBJECTS})
-    # 默认隐藏所有符号​​，再在代码中显式标记需导出的符号
+    # Hide all symbols in shared lib, explicitly mark the symbols to be exported in the code
     target_compile_options(chatty PRIVATE 
         -fvisibility=hidden -fvisibility-inlines-hidden
     )
