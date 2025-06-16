@@ -7,11 +7,15 @@ class Shape {
 public:
     Shape() = default;
     explicit Shape(const std::vector<int64_t>& dimensions);
+    int32_t ndim() const;
+    size_t num_elements() const;
 
-    const int& operator[](int index) const;  // const 版本
+    int operator[](int index) const;
+    bool operator==(const Shape& other) const;
+    bool operator!=(const Shape& other) const;
 
 private:
     std::vector<int64_t> dims_;
-    int ndim_ = 0;
+    int32_t ndim_ = 0;
 };
 }

@@ -8,8 +8,9 @@ public:
     Tensor() = default;
     Tensor(const void* data, DType dtype, const Shape& shape);
 
-    const void* getData() const;
-    DType getDType() const;
+    const void* data() const;
+    DType dtype() const;
+    Shape shape() const;
 
 private:
     const void* data_ = nullptr;
