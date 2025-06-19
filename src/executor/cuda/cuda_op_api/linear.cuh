@@ -17,8 +17,8 @@ Status linear(const Tensor& x, const Tensor& weight, Tensor& out);
  * * @param out Output tensor of shape (m, n) in fp16.
  * * @return chatty::Status.
  */
-Status linear_fp16(const __half* x, const __half* weight, const __half* bias, __half* out, int m, int k, int n);
-Status linear_fp16(const __half* x, const __half* weight, const float* bias, __half* out, int m, int k, int n);
+Status linear_fp16(const __half* x, const __half* weight, const __half* bias, float* out, int m, int k, int n);
+Status linear_fp16(const __half* x, const __half* weight, const float* bias, float* out, int m, int k, int n);
 
 /**
  * * Linear operation for int8 weights and fp16 inputs and outputs.
