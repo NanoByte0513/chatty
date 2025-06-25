@@ -2,20 +2,26 @@
 
 namespace chatty {
 typedef enum {
-    DTypeMin = 0,
-    Float32 = 0,
-    Float16 = 1,
-    Float8 = 2,
-    Int64 = 3,
-    Int32 = 4,
-    Int16 = 5,
-    Int8 = 6,
-    Int4 = 7,
-    Uint64 = 8,
-    Uint32 = 9,
-    Uint16 = 10,
-    Uint8 = 11,
-    BF16 = 12,
+    DTypeMin = kFloat32,
+    kFloat32 = 0,
+    kFloat16 = 1,
+    kFloat8 = 2,
+    kInt64 = 3,
+    kInt32 = 4,
+    kInt16 = 5,
+    kInt8 = 6,
+    kInt4 = 7,
+    kUint64 = 8,
+    kUint32 = 9,
+    kUint16 = 10,
+    kUint8 = 11,
+    kBF16 = 12,
     DTypeMax = 12
 } DType;
+
+typedef enum {
+    QuantTypeMin = kQuantTypeFP16,
+    kQuantTypeFP16 = 0,
+    kQuantTypeW16A16 = 1,
+} QuantType;
 } // namespace chatty

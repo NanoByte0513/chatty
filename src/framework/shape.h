@@ -10,7 +10,7 @@ public:
     int32_t ndim() const;
     size_t num_elements() const;
 
-    int operator[](int index) const;
+    int32_t operator[](int index) const;
     bool operator==(const Shape& other) const;
     bool operator!=(const Shape& other) const;
 
