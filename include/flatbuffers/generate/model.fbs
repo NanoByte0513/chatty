@@ -51,7 +51,7 @@ table Norm {
     type: string(required);
     weight: Tensor(required);
     bias: Tensor(required);
-    epsilon: float ;
+    epsilon: float;
     scale_x: ScaleInfo;
     scale_o: ScaleInfo;
 }

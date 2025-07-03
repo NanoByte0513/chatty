@@ -3,15 +3,15 @@
 namespace chatty {
 namespace cuda {
 
-CUDAAttnBlock::CUDAAttnBlock(AttnParam param): AttnBlock(param) {
+CudaAttnBlock::CudaAttnBlock(AttnParam param):AttnBlock(param) {
     
 }
 
-CUDAAttnBlock::~CUDAAttnBlock() {
+CudaAttnBlock::~CudaAttnBlock() {
 
 }
 
-Status CUDAAttnBlock::forward(const Tensor& x, Tensor& out){
+Status CudaAttnBlock::forward(const Tensor& x, Tensor& out){
 
 }
 

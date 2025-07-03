@@ -3,9 +3,9 @@
 
 namespace chatty {
 namespace cuda {
-class CUDAAttnBlock: public AttnBlock {
-    CUDAAttnBlock(AttnParam param);
-    ~CUDAAttnBlock();
+class CudaAttnBlock: public AttnBlock {
+    CudaAttnBlock(AttnParam param);
+    ~CudaAttnBlock();
     Status forward(const Tensor& x, Tensor& out);
 };
 

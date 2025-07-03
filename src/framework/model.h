@@ -163,11 +163,11 @@ public:
     };
     ChattyModel();
     ~ChattyModel();
-    Status init();
-    void destroy();
+    Status init() override;
+    void destroy() override;
     Status load_params(const char* res_path, size_t offset=0, size_t length=0);
-    Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const;
-    Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const;
+    Status tokenize(const std::string& prompt, std::vector<int32_t>& token_ids) const override;
+    Status detokenize(const std::vector<int32_t>& token_ids, std::string& prompt) const override;
 
     int32_t                num_layer() const;
     FBS_TransformerLayer_t layer(int32_t layer_idx) const;
