@@ -94,6 +94,7 @@ table Model {
     output_norm: Norm(required);
     output_embed: LinearLayer;
     layers: [TransformerLayer] (required);
+    // Attention params
     head_dim: int;
     kv_num_heads: int;
     q_num_heads: int;
