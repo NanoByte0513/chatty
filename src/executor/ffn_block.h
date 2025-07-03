@@ -4,7 +4,7 @@
 #include "framework/dtype.h"
 
 namespace chatty {
-struct MlpParam {
+struct FFNParam {
     Tensor& up_weight;
     Tensor& gate_weight;
     Tensor& down_weight;
@@ -13,12 +13,12 @@ struct MlpParam {
     QuantType quant_type;
 };
 
-class MlpBlock {
+class FFNBlock {
 public:
     virtual Status forward(const Tensor& x, Tensor& out) = 0;
     virtual Status loadParams(std::shared_ptr<ChattyModel> p_model) = 0;
 
 protected:
-    MlpParam param_;
+    FFNParam param_;
 };
 } // namespace chatty

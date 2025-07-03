@@ -7,7 +7,7 @@
 #include "framework/kvcache.h"
 #include "framework/model.h"
 #include "executor/attention_block.h"
-#include "executor/mlp_block.h"
+#include "executor/ffn_block.h"
 
 namespace chatty {
 class Executor {
@@ -26,7 +26,7 @@ public:
 protected:
     int32_t dev_id_;
     std::vector<AttnBlock> attn_blocks_;
-    std::vector<MlpBlock> mlp_blocks_;
+    std::vector<FFNBlock> ffn_blocks_;
     std::shared_ptr<ChattyModel> p_model_;
 };
 }
