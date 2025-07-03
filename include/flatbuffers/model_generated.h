@@ -636,7 +636,9 @@ struct AttentionLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_V_PROJ = 6,
     VT_Q_PROJ = 8,
     VT_O_PROJ = 10,
-    VT_NORM = 12
+    VT_Q_NORM = 12,
+    VT_K_NORM = 14,
+    VT_NORM = 16
   };
   const chatty_fbs::LinearLayer *k_proj() const {
     return GetPointer<const chatty_fbs::LinearLayer *>(VT_K_PROJ);
@@ -649,6 +651,12 @@ struct AttentionLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const chatty_fbs::LinearLayer *o_proj() const {
     return GetPointer<const chatty_fbs::LinearLayer *>(VT_O_PROJ);
+  }
+  const chatty_fbs::Norm *q_norm() const {
+    return GetPointer<const chatty_fbs::Norm *>(VT_Q_NORM);
+  }
+  const chatty_fbs::Norm *k_norm() const {
+    return GetPointer<const chatty_fbs::Norm *>(VT_K_NORM);
   }
   const chatty_fbs::Norm *norm() const {
     return GetPointer<const chatty_fbs::Norm *>(VT_NORM);
@@ -663,6 +671,10 @@ struct AttentionLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(q_proj()) &&
            VerifyOffsetRequired(verifier, VT_O_PROJ) &&
            verifier.VerifyTable(o_proj()) &&
+           VerifyOffset(verifier, VT_Q_NORM) &&
+           verifier.VerifyTable(q_norm()) &&
+           VerifyOffset(verifier, VT_K_NORM) &&
+           verifier.VerifyTable(k_norm()) &&
            VerifyOffsetRequired(verifier, VT_NORM) &&
            verifier.VerifyTable(norm()) &&
            verifier.EndTable();
@@ -684,6 +696,12 @@ struct AttentionLayerBuilder {
   }
   void add_o_proj(::flatbuffers::Offset<chatty_fbs::LinearLayer> o_proj) {
     fbb_.AddOffset(AttentionLayer::VT_O_PROJ, o_proj);
+  }
+  void add_q_norm(::flatbuffers::Offset<chatty_fbs::Norm> q_norm) {
+    fbb_.AddOffset(AttentionLayer::VT_Q_NORM, q_norm);
+  }
+  void add_k_norm(::flatbuffers::Offset<chatty_fbs::Norm> k_norm) {
+    fbb_.AddOffset(AttentionLayer::VT_K_NORM, k_norm);
   }
   void add_norm(::flatbuffers::Offset<chatty_fbs::Norm> norm) {
     fbb_.AddOffset(AttentionLayer::VT_NORM, norm);
@@ -710,9 +728,13 @@ inline ::flatbuffers::Offset<AttentionLayer> CreateAttentionLayer(
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> v_proj = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> q_proj = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> o_proj = 0,
+    ::flatbuffers::Offset<chatty_fbs::Norm> q_norm = 0,
+    ::flatbuffers::Offset<chatty_fbs::Norm> k_norm = 0,
     ::flatbuffers::Offset<chatty_fbs::Norm> norm = 0) {
   AttentionLayerBuilder builder_(_fbb);
   builder_.add_norm(norm);
+  builder_.add_k_norm(k_norm);
+  builder_.add_q_norm(q_norm);
   builder_.add_o_proj(o_proj);
   builder_.add_q_proj(q_proj);
   builder_.add_v_proj(v_proj);
@@ -1228,6 +1250,8 @@ inline const ::flatbuffers::TypeTable *AttentionLayerTypeTable() {
     { ::flatbuffers::ET_SEQUENCE, 0, 0 },
     { ::flatbuffers::ET_SEQUENCE, 0, 0 },
     { ::flatbuffers::ET_SEQUENCE, 0, 0 },
+    { ::flatbuffers::ET_SEQUENCE, 0, 1 },
+    { ::flatbuffers::ET_SEQUENCE, 0, 1 },
     { ::flatbuffers::ET_SEQUENCE, 0, 1 }
   };
   static const ::flatbuffers::TypeFunction type_refs[] = {
@@ -1239,10 +1263,12 @@ inline const ::flatbuffers::TypeTable *AttentionLayerTypeTable() {
     "v_proj",
     "q_proj",
     "o_proj",
+    "q_norm",
+    "k_norm",
     "norm"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_TABLE, 5, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_TABLE, 7, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }

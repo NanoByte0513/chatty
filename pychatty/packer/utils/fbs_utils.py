@@ -1,4 +1,6 @@
 import torch
+from tqdm import tqdm
+from chatty_fbs import *
 
 def torch_dtype2dtype(torch_dtype: torch.dtype):
     pass
@@ -10,6 +12,7 @@ class ChattyObject():
 
     def build(self, **kwargs):
         pass
+
 
 class ChattyScaleInfo(ChattyObject):
     def __init__(self):
@@ -39,3 +42,14 @@ class ChattyTensor(ChattyObject):
 class ChattyNorm(ChattyObject):
     def __init__(self, **kwarg):
         super().__init__(**kwarg)
+
+
+class ChattyModel(ChattyObject):
+    def __init__(self, **kwarg):
+        super().__init__(**kwarg)
+
+    def build(self, **kwargs):
+        return super().build(**kwargs)
+
+    def pack():
+        pass

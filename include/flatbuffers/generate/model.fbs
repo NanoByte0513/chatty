@@ -69,6 +69,8 @@ table AttentionLayer {
     v_proj: LinearLayer(required);
     q_proj: LinearLayer(required);
     o_proj: LinearLayer(required);
+    q_norm: Norm;
+    k_norm: Norm;
     norm: Norm(required);
 }
 

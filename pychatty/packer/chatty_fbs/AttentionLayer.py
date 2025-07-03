@@ -69,7 +69,7 @@ class AttentionLayer(object):
         return None
 
     # AttentionLayer
-    def Norm(self):
+    def QNorm(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
@@ -79,8 +79,30 @@ class AttentionLayer(object):
             return obj
         return None
 
+    # AttentionLayer
+    def KNorm(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            x = self._tab.Indirect(o + self._tab.Pos)
+            from chatty_fbs.Norm import Norm
+            obj = Norm()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # AttentionLayer
+    def Norm(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        if o != 0:
+            x = self._tab.Indirect(o + self._tab.Pos)
+            from chatty_fbs.Norm import Norm
+            obj = Norm()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
 def AttentionLayerStart(builder):
-    builder.StartObject(5)
+    builder.StartObject(7)
 
 def Start(builder):
     AttentionLayerStart(builder)
@@ -109,8 +131,20 @@ def AttentionLayerAddOProj(builder, oProj):
 def AddOProj(builder, oProj):
     AttentionLayerAddOProj(builder, oProj)
 
+def AttentionLayerAddQNorm(builder, qNorm):
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(qNorm), 0)
+
+def AddQNorm(builder, qNorm):
+    AttentionLayerAddQNorm(builder, qNorm)
+
+def AttentionLayerAddKNorm(builder, kNorm):
+    builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(kNorm), 0)
+
+def AddKNorm(builder, kNorm):
+    AttentionLayerAddKNorm(builder, kNorm)
+
 def AttentionLayerAddNorm(builder, norm):
-    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(norm), 0)
+    builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(norm), 0)
 
 def AddNorm(builder, norm):
     AttentionLayerAddNorm(builder, norm)
@@ -136,6 +170,8 @@ class AttentionLayerT(object):
         self.vProj = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
         self.qProj = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
         self.oProj = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
+        self.qNorm = None  # type: Optional[chatty_fbs.Norm.NormT]
+        self.kNorm = None  # type: Optional[chatty_fbs.Norm.NormT]
         self.norm = None  # type: Optional[chatty_fbs.Norm.NormT]
 
     @classmethod
@@ -167,6 +203,10 @@ class AttentionLayerT(object):
             self.qProj = chatty_fbs.LinearLayer.LinearLayerT.InitFromObj(attentionLayer.QProj())
         if attentionLayer.OProj() is not None:
             self.oProj = chatty_fbs.LinearLayer.LinearLayerT.InitFromObj(attentionLayer.OProj())
+        if attentionLayer.QNorm() is not None:
+            self.qNorm = chatty_fbs.Norm.NormT.InitFromObj(attentionLayer.QNorm())
+        if attentionLayer.KNorm() is not None:
+            self.kNorm = chatty_fbs.Norm.NormT.InitFromObj(attentionLayer.KNorm())
         if attentionLayer.Norm() is not None:
             self.norm = chatty_fbs.Norm.NormT.InitFromObj(attentionLayer.Norm())
 
@@ -180,6 +220,10 @@ class AttentionLayerT(object):
             qProj = self.qProj.Pack(builder)
         if self.oProj is not None:
             oProj = self.oProj.Pack(builder)
+        if self.qNorm is not None:
+            qNorm = self.qNorm.Pack(builder)
+        if self.kNorm is not None:
+            kNorm = self.kNorm.Pack(builder)
         if self.norm is not None:
             norm = self.norm.Pack(builder)
         AttentionLayerStart(builder)
@@ -191,6 +235,10 @@ class AttentionLayerT(object):
             AttentionLayerAddQProj(builder, qProj)
         if self.oProj is not None:
             AttentionLayerAddOProj(builder, oProj)
+        if self.qNorm is not None:
+            AttentionLayerAddQNorm(builder, qNorm)
+        if self.kNorm is not None:
+            AttentionLayerAddKNorm(builder, kNorm)
         if self.norm is not None:
             AttentionLayerAddNorm(builder, norm)
         attentionLayer = AttentionLayerEnd(builder)
