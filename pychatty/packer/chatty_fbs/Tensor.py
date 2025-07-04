@@ -73,8 +73,15 @@ class Tensor(object):
         return 0
 
     # Tensor
-    def Scale(self):
+    def DataSize(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
+        return 0
+
+    # Tensor
+    def Scale(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from chatty_fbs.ScaleInfo import ScaleInfo
@@ -84,7 +91,7 @@ class Tensor(object):
         return None
 
 def TensorStart(builder):
-    builder.StartObject(5)
+    builder.StartObject(6)
 
 def Start(builder):
     TensorStart(builder)
@@ -119,8 +126,14 @@ def TensorAddOffset(builder, offset):
 def AddOffset(builder, offset):
     TensorAddOffset(builder, offset)
 
+def TensorAddDataSize(builder, dataSize):
+    builder.PrependInt64Slot(4, dataSize, 0)
+
+def AddDataSize(builder, dataSize):
+    TensorAddDataSize(builder, dataSize)
+
 def TensorAddScale(builder, scale):
-    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(scale), 0)
+    builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(scale), 0)
 
 def AddScale(builder, scale):
     TensorAddScale(builder, scale)
@@ -145,6 +158,7 @@ class TensorT(object):
         self.shape = None  # type: List[int]
         self.dtype = 0  # type: int
         self.offset = 0  # type: int
+        self.dataSize = 0  # type: int
         self.scale = None  # type: Optional[chatty_fbs.ScaleInfo.ScaleInfoT]
 
     @classmethod
@@ -178,6 +192,7 @@ class TensorT(object):
                 self.shape = tensor.ShapeAsNumpy()
         self.dtype = tensor.Dtype()
         self.offset = tensor.Offset()
+        self.dataSize = tensor.DataSize()
         if tensor.Scale() is not None:
             self.scale = chatty_fbs.ScaleInfo.ScaleInfoT.InitFromObj(tensor.Scale())
 
@@ -202,6 +217,7 @@ class TensorT(object):
             TensorAddShape(builder, shape)
         TensorAddDtype(builder, self.dtype)
         TensorAddOffset(builder, self.offset)
+        TensorAddDataSize(builder, self.dataSize)
         if self.scale is not None:
             TensorAddScale(builder, scale)
         tensor = TensorEnd(builder)

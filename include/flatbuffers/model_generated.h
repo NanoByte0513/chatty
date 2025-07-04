@@ -215,7 +215,8 @@ struct ScaleInfo FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SHAPE = 6,
     VT_DTYPE = 8,
     VT_OFFSET = 10,
-    VT_ZERO_POINT = 12
+    VT_DATA_SIZE = 12,
+    VT_ZERO_POINT = 14
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -229,6 +230,9 @@ struct ScaleInfo FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int64_t offset() const {
     return GetField<int64_t>(VT_OFFSET, 0);
   }
+  int64_t data_size() const {
+    return GetField<int64_t>(VT_DATA_SIZE, 0);
+  }
   int32_t zero_point() const {
     return GetField<int32_t>(VT_ZERO_POINT, 0);
   }
@@ -240,6 +244,7 @@ struct ScaleInfo FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(shape()) &&
            VerifyField<int8_t>(verifier, VT_DTYPE, 1) &&
            VerifyField<int64_t>(verifier, VT_OFFSET, 8) &&
+           VerifyField<int64_t>(verifier, VT_DATA_SIZE, 8) &&
            VerifyField<int32_t>(verifier, VT_ZERO_POINT, 4) &&
            verifier.EndTable();
   }
@@ -260,6 +265,9 @@ struct ScaleInfoBuilder {
   }
   void add_offset(int64_t offset) {
     fbb_.AddElement<int64_t>(ScaleInfo::VT_OFFSET, offset, 0);
+  }
+  void add_data_size(int64_t data_size) {
+    fbb_.AddElement<int64_t>(ScaleInfo::VT_DATA_SIZE, data_size, 0);
   }
   void add_zero_point(int32_t zero_point) {
     fbb_.AddElement<int32_t>(ScaleInfo::VT_ZERO_POINT, zero_point, 0);
@@ -283,8 +291,10 @@ inline ::flatbuffers::Offset<ScaleInfo> CreateScaleInfo(
     ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> shape = 0,
     chatty_fbs::DType dtype = chatty_fbs::DType_NONE,
     int64_t offset = 0,
+    int64_t data_size = 0,
     int32_t zero_point = 0) {
   ScaleInfoBuilder builder_(_fbb);
+  builder_.add_data_size(data_size);
   builder_.add_offset(offset);
   builder_.add_zero_point(zero_point);
   builder_.add_shape(shape);
@@ -299,6 +309,7 @@ inline ::flatbuffers::Offset<ScaleInfo> CreateScaleInfoDirect(
     const std::vector<int32_t> *shape = nullptr,
     chatty_fbs::DType dtype = chatty_fbs::DType_NONE,
     int64_t offset = 0,
+    int64_t data_size = 0,
     int32_t zero_point = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto shape__ = shape ? _fbb.CreateVector<int32_t>(*shape) : 0;
@@ -308,6 +319,7 @@ inline ::flatbuffers::Offset<ScaleInfo> CreateScaleInfoDirect(
       shape__,
       dtype,
       offset,
+      data_size,
       zero_point);
 }
 
@@ -321,7 +333,8 @@ struct Tensor FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SHAPE = 6,
     VT_DTYPE = 8,
     VT_OFFSET = 10,
-    VT_SCALE = 12
+    VT_DATA_SIZE = 12,
+    VT_SCALE = 14
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -335,6 +348,9 @@ struct Tensor FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int64_t offset() const {
     return GetField<int64_t>(VT_OFFSET, 0);
   }
+  int64_t data_size() const {
+    return GetField<int64_t>(VT_DATA_SIZE, 0);
+  }
   const chatty_fbs::ScaleInfo *scale() const {
     return GetPointer<const chatty_fbs::ScaleInfo *>(VT_SCALE);
   }
@@ -346,6 +362,7 @@ struct Tensor FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(shape()) &&
            VerifyField<int8_t>(verifier, VT_DTYPE, 1) &&
            VerifyField<int64_t>(verifier, VT_OFFSET, 8) &&
+           VerifyField<int64_t>(verifier, VT_DATA_SIZE, 8) &&
            VerifyOffset(verifier, VT_SCALE) &&
            verifier.VerifyTable(scale()) &&
            verifier.EndTable();
@@ -367,6 +384,9 @@ struct TensorBuilder {
   }
   void add_offset(int64_t offset) {
     fbb_.AddElement<int64_t>(Tensor::VT_OFFSET, offset, 0);
+  }
+  void add_data_size(int64_t data_size) {
+    fbb_.AddElement<int64_t>(Tensor::VT_DATA_SIZE, data_size, 0);
   }
   void add_scale(::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale) {
     fbb_.AddOffset(Tensor::VT_SCALE, scale);
@@ -390,8 +410,10 @@ inline ::flatbuffers::Offset<Tensor> CreateTensor(
     ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> shape = 0,
     chatty_fbs::DType dtype = chatty_fbs::DType_NONE,
     int64_t offset = 0,
+    int64_t data_size = 0,
     ::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale = 0) {
   TensorBuilder builder_(_fbb);
+  builder_.add_data_size(data_size);
   builder_.add_offset(offset);
   builder_.add_scale(scale);
   builder_.add_shape(shape);
@@ -406,6 +428,7 @@ inline ::flatbuffers::Offset<Tensor> CreateTensorDirect(
     const std::vector<int32_t> *shape = nullptr,
     chatty_fbs::DType dtype = chatty_fbs::DType_NONE,
     int64_t offset = 0,
+    int64_t data_size = 0,
     ::flatbuffers::Offset<chatty_fbs::ScaleInfo> scale = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto shape__ = shape ? _fbb.CreateVector<int32_t>(*shape) : 0;
@@ -415,6 +438,7 @@ inline ::flatbuffers::Offset<Tensor> CreateTensorDirect(
       shape__,
       dtype,
       offset,
+      data_size,
       scale);
 }
 
@@ -1181,6 +1205,7 @@ inline const ::flatbuffers::TypeTable *ScaleInfoTypeTable() {
     { ::flatbuffers::ET_INT, 1, -1 },
     { ::flatbuffers::ET_CHAR, 0, 0 },
     { ::flatbuffers::ET_LONG, 0, -1 },
+    { ::flatbuffers::ET_LONG, 0, -1 },
     { ::flatbuffers::ET_INT, 0, -1 }
   };
   static const ::flatbuffers::TypeFunction type_refs[] = {
@@ -1191,10 +1216,11 @@ inline const ::flatbuffers::TypeTable *ScaleInfoTypeTable() {
     "shape",
     "dtype",
     "offset",
+    "data_size",
     "zero_point"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_TABLE, 5, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_TABLE, 6, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }
@@ -1204,6 +1230,7 @@ inline const ::flatbuffers::TypeTable *TensorTypeTable() {
     { ::flatbuffers::ET_STRING, 0, -1 },
     { ::flatbuffers::ET_INT, 1, -1 },
     { ::flatbuffers::ET_CHAR, 0, 0 },
+    { ::flatbuffers::ET_LONG, 0, -1 },
     { ::flatbuffers::ET_LONG, 0, -1 },
     { ::flatbuffers::ET_SEQUENCE, 0, 1 }
   };
@@ -1216,10 +1243,11 @@ inline const ::flatbuffers::TypeTable *TensorTypeTable() {
     "shape",
     "dtype",
     "offset",
+    "data_size",
     "scale"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_TABLE, 5, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_TABLE, 6, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }

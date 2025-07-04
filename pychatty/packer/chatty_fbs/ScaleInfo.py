@@ -73,14 +73,21 @@ class ScaleInfo(object):
         return 0
 
     # ScaleInfo
-    def ZeroPoint(self):
+    def DataSize(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
+        return 0
+
+    # ScaleInfo
+    def ZeroPoint(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
 def ScaleInfoStart(builder):
-    builder.StartObject(5)
+    builder.StartObject(6)
 
 def Start(builder):
     ScaleInfoStart(builder)
@@ -115,8 +122,14 @@ def ScaleInfoAddOffset(builder, offset):
 def AddOffset(builder, offset):
     ScaleInfoAddOffset(builder, offset)
 
+def ScaleInfoAddDataSize(builder, dataSize):
+    builder.PrependInt64Slot(4, dataSize, 0)
+
+def AddDataSize(builder, dataSize):
+    ScaleInfoAddDataSize(builder, dataSize)
+
 def ScaleInfoAddZeroPoint(builder, zeroPoint):
-    builder.PrependInt32Slot(4, zeroPoint, 0)
+    builder.PrependInt32Slot(5, zeroPoint, 0)
 
 def AddZeroPoint(builder, zeroPoint):
     ScaleInfoAddZeroPoint(builder, zeroPoint)
@@ -140,6 +153,7 @@ class ScaleInfoT(object):
         self.shape = None  # type: List[int]
         self.dtype = 0  # type: int
         self.offset = 0  # type: int
+        self.dataSize = 0  # type: int
         self.zeroPoint = 0  # type: int
 
     @classmethod
@@ -173,6 +187,7 @@ class ScaleInfoT(object):
                 self.shape = scaleInfo.ShapeAsNumpy()
         self.dtype = scaleInfo.Dtype()
         self.offset = scaleInfo.Offset()
+        self.dataSize = scaleInfo.DataSize()
         self.zeroPoint = scaleInfo.ZeroPoint()
 
     # ScaleInfoT
@@ -194,6 +209,7 @@ class ScaleInfoT(object):
             ScaleInfoAddShape(builder, shape)
         ScaleInfoAddDtype(builder, self.dtype)
         ScaleInfoAddOffset(builder, self.offset)
+        ScaleInfoAddDataSize(builder, self.dataSize)
         ScaleInfoAddZeroPoint(builder, self.zeroPoint)
         scaleInfo = ScaleInfoEnd(builder)
         return scaleInfo

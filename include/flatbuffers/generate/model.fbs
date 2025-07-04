@@ -37,6 +37,7 @@ table ScaleInfo {
     shape: [int] (required);
     dtype: DType;
     offset: int64;
+    data_size: int64;
     zero_point: int;
 }
 
@@ -45,6 +46,7 @@ table Tensor {
     shape: [int] (required);
     dtype: DType;
     offset: int64;
+    data_size: int64;
     scale: ScaleInfo;
 }
 
