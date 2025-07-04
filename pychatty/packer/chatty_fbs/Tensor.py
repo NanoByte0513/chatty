@@ -25,15 +25,8 @@ class Tensor(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Tensor
-    def Name(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Tensor
     def Shape(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Int32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
@@ -41,47 +34,47 @@ class Tensor(object):
 
     # Tensor
     def ShapeAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Int32Flags, o)
         return 0
 
     # Tensor
     def ShapeLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Tensor
     def ShapeIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
     # Tensor
     def Dtype(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
     # Tensor
     def Offset(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
         return 0
 
     # Tensor
     def DataSize(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
         return 0
 
     # Tensor
     def Scale(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from chatty_fbs.ScaleInfo import ScaleInfo
@@ -91,19 +84,13 @@ class Tensor(object):
         return None
 
 def TensorStart(builder):
-    builder.StartObject(6)
+    builder.StartObject(5)
 
 def Start(builder):
     TensorStart(builder)
 
-def TensorAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-
-def AddName(builder, name):
-    TensorAddName(builder, name)
-
 def TensorAddShape(builder, shape):
-    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(shape), 0)
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(shape), 0)
 
 def AddShape(builder, shape):
     TensorAddShape(builder, shape)
@@ -115,25 +102,25 @@ def StartShapeVector(builder, numElems):
     return TensorStartShapeVector(builder, numElems)
 
 def TensorAddDtype(builder, dtype):
-    builder.PrependInt8Slot(2, dtype, 0)
+    builder.PrependInt8Slot(1, dtype, 0)
 
 def AddDtype(builder, dtype):
     TensorAddDtype(builder, dtype)
 
 def TensorAddOffset(builder, offset):
-    builder.PrependInt64Slot(3, offset, 0)
+    builder.PrependInt64Slot(2, offset, 0)
 
 def AddOffset(builder, offset):
     TensorAddOffset(builder, offset)
 
 def TensorAddDataSize(builder, dataSize):
-    builder.PrependInt64Slot(4, dataSize, 0)
+    builder.PrependInt64Slot(3, dataSize, 0)
 
 def AddDataSize(builder, dataSize):
     TensorAddDataSize(builder, dataSize)
 
 def TensorAddScale(builder, scale):
-    builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(scale), 0)
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(scale), 0)
 
 def AddScale(builder, scale):
     TensorAddScale(builder, scale)
@@ -154,7 +141,6 @@ class TensorT(object):
 
     # TensorT
     def __init__(self):
-        self.name = None  # type: str
         self.shape = None  # type: List[int]
         self.dtype = 0  # type: int
         self.offset = 0  # type: int
@@ -182,7 +168,6 @@ class TensorT(object):
     def _UnPack(self, tensor):
         if tensor is None:
             return
-        self.name = tensor.Name()
         if not tensor.ShapeIsNone():
             if np is None:
                 self.shape = []
@@ -198,8 +183,6 @@ class TensorT(object):
 
     # TensorT
     def Pack(self, builder):
-        if self.name is not None:
-            name = builder.CreateString(self.name)
         if self.shape is not None:
             if np is not None and type(self.shape) is np.ndarray:
                 shape = builder.CreateNumpyVector(self.shape)
@@ -211,8 +194,6 @@ class TensorT(object):
         if self.scale is not None:
             scale = self.scale.Pack(builder)
         TensorStart(builder)
-        if self.name is not None:
-            TensorAddName(builder, name)
         if self.shape is not None:
             TensorAddShape(builder, shape)
         TensorAddDtype(builder, self.dtype)

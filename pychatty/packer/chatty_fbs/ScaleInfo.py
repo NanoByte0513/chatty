@@ -25,15 +25,8 @@ class ScaleInfo(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # ScaleInfo
-    def Name(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # ScaleInfo
     def Shape(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Int32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
@@ -41,65 +34,59 @@ class ScaleInfo(object):
 
     # ScaleInfo
     def ShapeAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Int32Flags, o)
         return 0
 
     # ScaleInfo
     def ShapeLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # ScaleInfo
     def ShapeIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
     # ScaleInfo
     def Dtype(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int8Flags, o + self._tab.Pos)
         return 0
 
     # ScaleInfo
     def Offset(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
         return 0
 
     # ScaleInfo
     def DataSize(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int64Flags, o + self._tab.Pos)
         return 0
 
     # ScaleInfo
     def ZeroPoint(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
 def ScaleInfoStart(builder):
-    builder.StartObject(6)
+    builder.StartObject(5)
 
 def Start(builder):
     ScaleInfoStart(builder)
 
-def ScaleInfoAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-
-def AddName(builder, name):
-    ScaleInfoAddName(builder, name)
-
 def ScaleInfoAddShape(builder, shape):
-    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(shape), 0)
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(shape), 0)
 
 def AddShape(builder, shape):
     ScaleInfoAddShape(builder, shape)
@@ -111,25 +98,25 @@ def StartShapeVector(builder, numElems):
     return ScaleInfoStartShapeVector(builder, numElems)
 
 def ScaleInfoAddDtype(builder, dtype):
-    builder.PrependInt8Slot(2, dtype, 0)
+    builder.PrependInt8Slot(1, dtype, 0)
 
 def AddDtype(builder, dtype):
     ScaleInfoAddDtype(builder, dtype)
 
 def ScaleInfoAddOffset(builder, offset):
-    builder.PrependInt64Slot(3, offset, 0)
+    builder.PrependInt64Slot(2, offset, 0)
 
 def AddOffset(builder, offset):
     ScaleInfoAddOffset(builder, offset)
 
 def ScaleInfoAddDataSize(builder, dataSize):
-    builder.PrependInt64Slot(4, dataSize, 0)
+    builder.PrependInt64Slot(3, dataSize, 0)
 
 def AddDataSize(builder, dataSize):
     ScaleInfoAddDataSize(builder, dataSize)
 
 def ScaleInfoAddZeroPoint(builder, zeroPoint):
-    builder.PrependInt32Slot(5, zeroPoint, 0)
+    builder.PrependInt32Slot(4, zeroPoint, 0)
 
 def AddZeroPoint(builder, zeroPoint):
     ScaleInfoAddZeroPoint(builder, zeroPoint)
@@ -149,7 +136,6 @@ class ScaleInfoT(object):
 
     # ScaleInfoT
     def __init__(self):
-        self.name = None  # type: str
         self.shape = None  # type: List[int]
         self.dtype = 0  # type: int
         self.offset = 0  # type: int
@@ -177,7 +163,6 @@ class ScaleInfoT(object):
     def _UnPack(self, scaleInfo):
         if scaleInfo is None:
             return
-        self.name = scaleInfo.Name()
         if not scaleInfo.ShapeIsNone():
             if np is None:
                 self.shape = []
@@ -192,8 +177,6 @@ class ScaleInfoT(object):
 
     # ScaleInfoT
     def Pack(self, builder):
-        if self.name is not None:
-            name = builder.CreateString(self.name)
         if self.shape is not None:
             if np is not None and type(self.shape) is np.ndarray:
                 shape = builder.CreateNumpyVector(self.shape)
@@ -203,8 +186,6 @@ class ScaleInfoT(object):
                     builder.PrependInt32(self.shape[i])
                 shape = builder.EndVector()
         ScaleInfoStart(builder)
-        if self.name is not None:
-            ScaleInfoAddName(builder, name)
         if self.shape is not None:
             ScaleInfoAddShape(builder, shape)
         ScaleInfoAddDtype(builder, self.dtype)

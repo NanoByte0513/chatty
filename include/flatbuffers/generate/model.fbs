@@ -33,7 +33,6 @@ enum ActLayer:byte {
 }
 
 table ScaleInfo {
-    name: string (required);
     shape: [int] (required);
     dtype: DType;
     offset: int64;
@@ -42,7 +41,6 @@ table ScaleInfo {
 }
 
 table Tensor {
-    name: string (required);
     shape: [int] (required);
     dtype: DType;
     offset: int64;

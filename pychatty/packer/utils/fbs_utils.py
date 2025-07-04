@@ -79,8 +79,8 @@ class ChattyNorm(ChattyObject):
 
 
 class ChattyLinearLayer(ChattyObject):
-    def __init__(self, **kwarg):
-        super().__init__(**kwarg)
+    def __init__(self, weight:torch.Tensor, bias:torch.Tensor|None, act_bits=FbsActivationBits.ActivationBits.FP16, scale_x=None, scale_o=None):
+        super().__init__()
 
     def build(self, builder=None):
         if builder is None:
@@ -123,7 +123,7 @@ class ChattyFfnLayer(ChattyObject):
 
 
 class ChattyModel(ChattyObject):
-    def __init__(self, model_path:str, output_path:str):
+    def __init__(self, model_path:str, output_path:str, name:str):
         model_config = read_config(model_path)
         # Model architecture params
         model_type          = model_config["model_type"]
@@ -149,9 +149,9 @@ class ChattyModel(ChattyObject):
         epsilon             = model_config["epsilon"]
 
         safetensors_files = []
-        for name in os.listdir(model_path):
-            full_path = os.path.join(model_path, name)
-            if os.path.isfile(full_path) and name.endswith(".safetensors"):
+        for file_name in os.listdir(model_path):
+            full_path = os.path.join(model_path, file_name)
+            if os.path.isfile(full_path) and file_name.endswith(".safetensors"):
                 safetensors_files.append(full_path)
         if len(safetensors_files) > 1:
             # TODO: Read tensor index json
@@ -160,7 +160,7 @@ class ChattyModel(ChattyObject):
         tokenizer = read_tokenizer(model_path)
 
         super().__init__(safetensors_files=safetensors_files, tokenizer=tokenizer, 
-                         model_type=model_type, num_layers=num_layers, hidden_size=hidden_size, rope_theta=rope_theta, 
+                         model_type=model_type, name=name, num_layers=num_layers, hidden_size=hidden_size, rope_theta=rope_theta, 
                          weight_dtype=weight_dtype, tie_word_embeddings=tie_word_embeddings,
                          vocab_size=vocab_size, bos_tokens=bos_tokens, eos_tokens=eos_tokens,
                          attention_bias=attention_bias, q_num_heads=q_num_heads, kv_num_heads=kv_num_heads, head_dim=head_dim,
@@ -177,13 +177,13 @@ class ChattyModel(ChattyObject):
         # TODO: More than one safetensors file
         with safe_open(self.safetensors_files[0], framework='pt', device='cpu') as file:
             input_embed_weight_tensor = file.get_tensor(KEY_MAP["input_embed_weight"])
-            input_embed = ChattyLinearLayer(weight=input_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+            input_embed = ChattyLinearLayer(weight=input_embed_weight_tensor)
             self.input_embed = input_embed
 
             transformer_layers = []
             for i in range(self.num_layers):
                 attn_norm_weight_tensor = file.get_tensor(KEY_MAP["attn_norm_weight"].replace('*', str(i)))
-                attn_norm = ChattyNorm(type=self.norm_type, weight=attn_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                attn_norm = ChattyNorm(type=self.norm_type, weight=attn_norm_weight_tensor, epsilon=self.epsilon)
 
                 # TODO: Attention bias
                 if self.attention_bias:
@@ -196,34 +196,34 @@ class ChattyModel(ChattyObject):
                     v_proj_bias_tensor = None
                 
                 q_proj_weight_tensor = file.get_tensor(KEY_MAP["q_proj_weight"].replace('*', str(i)))
-                q_proj = ChattyLinearLayer(weight=q_proj_weight_tensor, bias=q_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+                q_proj = ChattyLinearLayer(weight=q_proj_weight_tensor, bias=q_proj_bias_tensor)
 
                 k_proj_weight_tensor = file.get_tensor(KEY_MAP["k_proj_weight"].replace('*', str(i)))
-                k_proj = ChattyLinearLayer(weight=k_proj_weight_tensor, bias=k_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+                k_proj = ChattyLinearLayer(weight=k_proj_weight_tensor, bias=k_proj_bias_tensor)
 
                 v_proj_weight_tensor = file.get_tensor(KEY_MAP["v_proj_weight"].replace('*', str(i)))
-                v_proj = ChattyLinearLayer(weight=v_proj_weight_tensor, bias=v_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+                v_proj = ChattyLinearLayer(weight=v_proj_weight_tensor, bias=v_proj_bias_tensor)
 
                 o_proj_weight_tensor = file.get_tensor(KEY_MAP["o_proj_weight"].replace('*', str(i)))
-                o_proj = ChattyLinearLayer(weight=o_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+                o_proj = ChattyLinearLayer(weight=o_proj_weight_tensor)
 
                 q_norm_weight_tensor = file.get_tensor(KEY_MAP["q_norm_weight"].replace('*', str(i)))
-                q_norm = ChattyNorm(type=self.norm_type, weight=q_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                q_norm = ChattyNorm(type=self.norm_type, weight=q_norm_weight_tensor, epsilon=self.epsilon)
 
                 k_norm_weight_tensor = file.get_tensor(KEY_MAP["k_norm_weight"].replace('*', str(i)))
-                k_norm = ChattyNorm(type=self.norm_type, weight=k_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                k_norm = ChattyNorm(type=self.norm_type, weight=k_norm_weight_tensor, epsilon=self.epsilon)
 
                 mlp_norm_weight_tensor = file.get_tensor(KEY_MAP["mlp_norm_weight"].replace('*', str(i)))
-                mlp_norm = ChattyNorm(type=self.norm_type, weight=mlp_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                mlp_norm = ChattyNorm(type=self.norm_type, weight=mlp_norm_weight_tensor, epsilon=self.epsilon)
 
                 up_proj_weight_tensor = file.get_tensor(KEY_MAP["up_proj_weight"].replace('*', str(i)))
-                up_proj = ChattyLinearLayer(weight=up_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+                up_proj = ChattyLinearLayer(weight=up_proj_weight_tensor)
 
                 gate_proj_weight_tensor = file.get_tensor(KEY_MAP["gate_proj_weight"].replace('*', str(i)))
-                gate_proj = ChattyLinearLayer(weight=gate_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+                gate_proj = ChattyLinearLayer(weight=gate_proj_weight_tensor)
 
                 down_proj_weight_tensor = file.get_tensor(KEY_MAP["down_proj_weight"].replace('*', str(i)))
-                down_proj = ChattyLinearLayer(weight=down_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+                down_proj = ChattyLinearLayer(weight=down_proj_weight_tensor)
 
                 this_layer = ChattyTransformerLayer(
                     layer_idx=i, 
@@ -234,18 +234,22 @@ class ChattyModel(ChattyObject):
             self.transformer_layers = transformer_layers
 
             output_norm_weight_tensor = file.get_tensor(KEY_MAP["output_norm_weight"].replace('*', str(i)))
-            output_norm = ChattyNorm(type=self.norm_type, weight=output_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+            output_norm = ChattyNorm(type=self.norm_type, weight=output_norm_weight_tensor, epsilon=self.epsilon)
             self.output_norm = output_norm
 
             if self.tie_word_embeddings:
                 output_embed = input_embed
             else:
                 output_embed_weight_tensor = file.get_tensor(KEY_MAP["output_embed_weight"].replace('*', str(i)))
-                output_embed = ChattyLinearLayer(weight=output_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+                output_embed = ChattyLinearLayer(weight=output_embed_weight_tensor)
             self.output_embed = output_embed
 
     def build(self):
         builder = flatbuffers.Builder(0)
+
+        name = builder.CreateString(self.name)
+        model_type = builder.CreateString(self.model_type)
+        tokenizer = None
 
         input_embed = self.input_embed.build(builder)
 
@@ -259,9 +263,19 @@ class ChattyModel(ChattyObject):
         for l in reversed(built_layers):
             builder.PrependUOffsetTRelative(l)
         layers = builder.EndVector()
+
+        output_norm = self.output_norm.build(builder)
+        output_embed = self.output_embed.build(builder)
+
+        # ============== Build attention params ==============
+        head_dim = self.head_dim
+        kv_num_heads = self.kv_num_heads
+        q_num_heads = self.q_num_heads
         
         # ============== Build finish ==============
-        model = super().build()
+        model = super().build(name=name, model_type=model_type, tokenizer=tokenizer, input_embed=input_embed,
+                              output_norm=output_norm, output_embed=output_embed, layers=layers,
+                              head_dim=head_dim, kv_num_heads=kv_num_heads, q_num_heads=q_num_heads)
         builder.Finish(model)
         return builder.Output()
 
