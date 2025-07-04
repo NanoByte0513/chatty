@@ -1,8 +1,5 @@
 import json
 
-"""
-使用Hugging Face的AutoTokenizer生成基准结果，对比此tokenizer的输出
-"""
 def read_tokenizer(path:str):
     tokenizer = json.load(open(path))
     tokenizer_type = tokenizer["model"]["type"].upper()
@@ -13,6 +10,7 @@ def read_tokenizer(path:str):
     
 def read_bpe(raw_tokenizer:dict):
     tokenizer = {}
+    tokenizer["type"] = 1
     # Load vocab
     raw_vocab = raw_tokenizer["model"]["vocab"]
     vocab = []
@@ -28,7 +26,15 @@ def read_bpe(raw_tokenizer:dict):
         merges.append(pair_str)
     tokenizer["merges"] = merges
 
-    # Load specials
+    # Load special_tokens
+    raw_added = raw_tokenizer["added_tokens"]
+    specials = []
+    for added_tokens in raw_added:
+        if added_tokens["special"]:
+            specials.append(added_tokens["content"])
+    tokenizer["specials"] = specials
 
+    # Regex
+    tokenizer["regex"] = tokenizer["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"]
 
     return tokenizer

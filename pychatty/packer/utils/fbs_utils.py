@@ -15,6 +15,7 @@ from ..chatty_fbs.ScaleInfo import ScaleInfo as FbsScaleInfo
 from ..chatty_fbs.DType import DType as FbsDType
 from ..chatty_fbs.ActivationBits import ActivationBits as FbsActivationBits
 from .config import read_config
+from .tokenizer import read_tokenizer
 from safetensors import safe_open
 
 
