@@ -909,15 +909,23 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return ModelTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_TOKENIZER = 4,
-    VT_INPUT_EMBED = 6,
-    VT_OUTPUT_NORM = 8,
-    VT_OUTPUT_EMBED = 10,
-    VT_LAYERS = 12,
-    VT_HEAD_DIM = 14,
-    VT_KV_NUM_HEADS = 16,
-    VT_Q_NUM_HEADS = 18
+    VT_NAME = 4,
+    VT_MODEL_TYPE = 6,
+    VT_TOKENIZER = 8,
+    VT_INPUT_EMBED = 10,
+    VT_OUTPUT_NORM = 12,
+    VT_OUTPUT_EMBED = 14,
+    VT_LAYERS = 16,
+    VT_HEAD_DIM = 18,
+    VT_KV_NUM_HEADS = 20,
+    VT_Q_NUM_HEADS = 22
   };
+  const ::flatbuffers::String *name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  }
+  const ::flatbuffers::String *model_type() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_MODEL_TYPE);
+  }
   const ::flatbuffers::Vector<int8_t> *tokenizer() const {
     return GetPointer<const ::flatbuffers::Vector<int8_t> *>(VT_TOKENIZER);
   }
@@ -944,6 +952,10 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
+           verifier.VerifyString(name()) &&
+           VerifyOffsetRequired(verifier, VT_MODEL_TYPE) &&
+           verifier.VerifyString(model_type()) &&
            VerifyOffsetRequired(verifier, VT_TOKENIZER) &&
            verifier.VerifyVector(tokenizer()) &&
            VerifyOffsetRequired(verifier, VT_INPUT_EMBED) &&
@@ -966,6 +978,12 @@ struct ModelBuilder {
   typedef Model Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
+    fbb_.AddOffset(Model::VT_NAME, name);
+  }
+  void add_model_type(::flatbuffers::Offset<::flatbuffers::String> model_type) {
+    fbb_.AddOffset(Model::VT_MODEL_TYPE, model_type);
+  }
   void add_tokenizer(::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizer) {
     fbb_.AddOffset(Model::VT_TOKENIZER, tokenizer);
   }
@@ -997,6 +1015,8 @@ struct ModelBuilder {
   ::flatbuffers::Offset<Model> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Model>(end);
+    fbb_.Required(o, Model::VT_NAME);
+    fbb_.Required(o, Model::VT_MODEL_TYPE);
     fbb_.Required(o, Model::VT_TOKENIZER);
     fbb_.Required(o, Model::VT_INPUT_EMBED);
     fbb_.Required(o, Model::VT_OUTPUT_NORM);
@@ -1007,6 +1027,8 @@ struct ModelBuilder {
 
 inline ::flatbuffers::Offset<Model> CreateModel(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> model_type = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizer = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> input_embed = 0,
     ::flatbuffers::Offset<chatty_fbs::Norm> output_norm = 0,
@@ -1024,11 +1046,15 @@ inline ::flatbuffers::Offset<Model> CreateModel(
   builder_.add_output_norm(output_norm);
   builder_.add_input_embed(input_embed);
   builder_.add_tokenizer(tokenizer);
+  builder_.add_model_type(model_type);
+  builder_.add_name(name);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<Model> CreateModelDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *name = nullptr,
+    const char *model_type = nullptr,
     const std::vector<int8_t> *tokenizer = nullptr,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> input_embed = 0,
     ::flatbuffers::Offset<chatty_fbs::Norm> output_norm = 0,
@@ -1037,10 +1063,14 @@ inline ::flatbuffers::Offset<Model> CreateModelDirect(
     int32_t head_dim = 0,
     int32_t kv_num_heads = 0,
     int32_t q_num_heads = 0) {
+  auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto model_type__ = model_type ? _fbb.CreateString(model_type) : 0;
   auto tokenizer__ = tokenizer ? _fbb.CreateVector<int8_t>(*tokenizer) : 0;
   auto layers__ = layers ? _fbb.CreateVector<::flatbuffers::Offset<chatty_fbs::TransformerLayer>>(*layers) : 0;
   return chatty_fbs::CreateModel(
       _fbb,
+      name__,
+      model_type__,
       tokenizer__,
       input_embed,
       output_norm,
@@ -1325,6 +1355,8 @@ inline const ::flatbuffers::TypeTable *TransformerLayerTypeTable() {
 
 inline const ::flatbuffers::TypeTable *ModelTypeTable() {
   static const ::flatbuffers::TypeCode type_codes[] = {
+    { ::flatbuffers::ET_STRING, 0, -1 },
+    { ::flatbuffers::ET_STRING, 0, -1 },
     { ::flatbuffers::ET_CHAR, 1, -1 },
     { ::flatbuffers::ET_SEQUENCE, 0, 0 },
     { ::flatbuffers::ET_SEQUENCE, 0, 1 },
@@ -1340,6 +1372,8 @@ inline const ::flatbuffers::TypeTable *ModelTypeTable() {
     chatty_fbs::TransformerLayerTypeTable
   };
   static const char * const names[] = {
+    "name",
+    "model_type",
     "tokenizer",
     "input_embed",
     "output_norm",
@@ -1350,7 +1384,7 @@ inline const ::flatbuffers::TypeTable *ModelTypeTable() {
     "q_num_heads"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_TABLE, 8, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_TABLE, 10, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }

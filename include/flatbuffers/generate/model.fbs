@@ -33,7 +33,7 @@ enum ActLayer:byte {
 }
 
 table ScaleInfo {
-    name: string(required);
+    name: string (required);
     shape: [int] (required);
     dtype: DType;
     offset: int64;
@@ -41,7 +41,7 @@ table ScaleInfo {
 }
 
 table Tensor {
-    name: string(required);
+    name: string (required);
     shape: [int] (required);
     dtype: DType;
     offset: int64;
@@ -49,8 +49,8 @@ table Tensor {
 }
 
 table Norm {
-    type: string(required);
-    weight: Tensor(required);
+    type: string (required);
+    weight: Tensor (required);
     bias: Tensor;
     epsilon: float;
     scale_x: ScaleInfo;
@@ -58,7 +58,7 @@ table Norm {
 }
 
 table LinearLayer {
-    weight: Tensor(required);
+    weight: Tensor (required);
     bias: Tensor;
     act_bits: ActivationBits;
     scale_x: ScaleInfo;
@@ -66,33 +66,35 @@ table LinearLayer {
 }
 
 table AttentionLayer {
-    k_proj: LinearLayer(required);
-    v_proj: LinearLayer(required);
-    q_proj: LinearLayer(required);
-    o_proj: LinearLayer(required);
+    k_proj: LinearLayer (required);
+    v_proj: LinearLayer (required);
+    q_proj: LinearLayer (required);
+    o_proj: LinearLayer (required);
     q_norm: Norm;
     k_norm: Norm;
     norm: Norm(required);
 }
 
 table FFNLayer {
-    up_proj: LinearLayer(required);
-    down_proj: LinearLayer(required);
-    gate_proj: LinearLayer(required);
-    norm: Norm(required);
+    up_proj: LinearLayer (required);
+    down_proj: LinearLayer (required);
+    gate_proj: LinearLayer (required);
+    norm: Norm (required);
     act_layer: ActLayer;
 }
 
 table TransformerLayer {
     layer_idx: int;
-    attn_layer: AttentionLayer(required);
-    ffn_layer: FFNLayer(required);
+    attn_layer: AttentionLayer (required);
+    ffn_layer: FFNLayer (required);
 }
 
 table Model {
+    name: string (required);
+    model_type: string (required);
     tokenizer: [byte] (required);
-    input_embed: LinearLayer(required);
-    output_norm: Norm(required);
+    input_embed: LinearLayer (required);
+    output_norm: Norm (required);
     output_embed: LinearLayer;
     layers: [TransformerLayer] (required);
     // Attention params

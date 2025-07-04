@@ -3,17 +3,17 @@ import flatbuffers
 import numpy as np
 import os
 from tqdm import tqdm
-from ..chatty_fbs.Model import Model as FbsModel
-from ..chatty_fbs.TransformerLayer import TransformerLayer as FbsTransformerLayer
-from ..chatty_fbs.AttentionLayer import AttentionLayer as FbsAttentionLayer
-from ..chatty_fbs.FFNLayer import FFNLayer as FbsFFNLayer
-from ..chatty_fbs.LinearLayer import LinearLayer as FbsLinearLayer
-from ..chatty_fbs.ActLayer import ActLayer as FbsActLayer
-from ..chatty_fbs.Norm import Norm as FbsNorm
-from ..chatty_fbs.Tensor import Tensor as FbsTensor
-from ..chatty_fbs.ScaleInfo import ScaleInfo as FbsScaleInfo
-from ..chatty_fbs.DType import DType as FbsDType
-from ..chatty_fbs.ActivationBits import ActivationBits as FbsActivationBits
+from ..chatty_fbs import Model as FbsModel
+from ..chatty_fbs import TransformerLayer as FbsTransformerLayer
+from ..chatty_fbs import AttentionLayer as FbsAttentionLayer
+from ..chatty_fbs import FFNLayer as FbsFFNLayer
+from ..chatty_fbs import LinearLayer as FbsLinearLayer
+from ..chatty_fbs import ActLayer as FbsActLayer
+from ..chatty_fbs import Norm as FbsNorm
+from ..chatty_fbs import Tensor as FbsTensor
+from ..chatty_fbs import ScaleInfo as FbsScaleInfo
+from ..chatty_fbs import DType as FbsDType
+from ..chatty_fbs import ActivationBits as FbsActivationBits
 from .key_map import *
 from .config import read_config
 from .tokenizer import read_tokenizer
@@ -21,8 +21,15 @@ from safetensors import safe_open
 
 DATA_SIZE = 0
 
-def torch_dtype2dtype(torch_dtype: torch.dtype):
+def torch_dtype2dtype(torch_dtype:torch.dtype):
     pass
+
+def str2act_layer(act_algo:str):
+    act_algo = act_algo.upper()
+    if hasattr(FbsActLayer.ActLayer, act_algo):
+        return getattr(FbsActLayer.ActLayer, act_algo)
+    else:
+        return FbsActLayer.ActLayer.NONE
 
 class ChattyObject():
     def __init__(self, **kwarg):
@@ -39,14 +46,6 @@ class ChattyScaleInfo(ChattyObject):
 
     def build(self, builder=None):
         return super().build()
-
-
-class ChattyActLayer(ChattyObject):
-    def __init__(self):
-        super().__init__()
-
-    def build(self, builder=None):
-        return super().build() 
 
 
 class ChattyTensor(ChattyObject):
@@ -179,29 +178,13 @@ class ChattyModel(ChattyObject):
         with safe_open(self.safetensors_files[0], framework='pt', device='cpu') as file:
             input_embed_weight_tensor = file.get_tensor(KEY_MAP["input_embed_weight"])
             input_embed = ChattyLinearLayer(weight=input_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+            self.input_embed = input_embed
 
             transformer_layers = []
             for i in range(self.num_layers):
                 attn_norm_weight_tensor = file.get_tensor(KEY_MAP["attn_norm_weight"].replace('*', str(i)))
                 attn_norm = ChattyNorm(type=self.norm_type, weight=attn_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
-                
-                q_proj_weight_tensor = file.get_tensor(KEY_MAP["q_proj_weight"].replace('*', str(i)))
-                q_proj = ChattyLinearLayer(weight=q_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
 
-                k_proj_weight_tensor = file.get_tensor(KEY_MAP["k_proj_weight"].replace('*', str(i)))
-                k_proj = ChattyLinearLayer(weight=k_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
-
-                v_proj_weight_tensor = file.get_tensor(KEY_MAP["v_proj_weight"].replace('*', str(i)))
-                v_proj = ChattyLinearLayer(weight=v_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
-
-                o_proj_weight_tensor = file.get_tensor(KEY_MAP["o_proj_weight"].replace('*', str(i)))
-                o_proj = ChattyLinearLayer(weight=o_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
-
-                q_norm_weight_tensor = file.get_tensor(KEY_MAP["q_norm_weight"].replace('*', str(i)))
-                q_norm = ChattyNorm(type=self.norm_type, weight=q_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
-
-                k_norm_weight_tensor = file.get_tensor(KEY_MAP["k_norm_weight"].replace('*', str(i)))
-                k_norm = ChattyNorm(type=self.norm_type, weight=k_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
                 # TODO: Attention bias
                 if self.attention_bias:
                     q_proj_bias_tensor = None
@@ -211,6 +194,24 @@ class ChattyModel(ChattyObject):
                     q_proj_bias_tensor = None
                     k_proj_bias_tensor = None
                     v_proj_bias_tensor = None
+                
+                q_proj_weight_tensor = file.get_tensor(KEY_MAP["q_proj_weight"].replace('*', str(i)))
+                q_proj = ChattyLinearLayer(weight=q_proj_weight_tensor, bias=q_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+
+                k_proj_weight_tensor = file.get_tensor(KEY_MAP["k_proj_weight"].replace('*', str(i)))
+                k_proj = ChattyLinearLayer(weight=k_proj_weight_tensor, bias=k_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+
+                v_proj_weight_tensor = file.get_tensor(KEY_MAP["v_proj_weight"].replace('*', str(i)))
+                v_proj = ChattyLinearLayer(weight=v_proj_weight_tensor, bias=v_proj_bias_tensor, act_bits=None, scale_x=None, scale_o=None)
+
+                o_proj_weight_tensor = file.get_tensor(KEY_MAP["o_proj_weight"].replace('*', str(i)))
+                o_proj = ChattyLinearLayer(weight=o_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                q_norm_weight_tensor = file.get_tensor(KEY_MAP["q_norm_weight"].replace('*', str(i)))
+                q_norm = ChattyNorm(type=self.norm_type, weight=q_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+
+                k_norm_weight_tensor = file.get_tensor(KEY_MAP["k_norm_weight"].replace('*', str(i)))
+                k_norm = ChattyNorm(type=self.norm_type, weight=k_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
 
                 mlp_norm_weight_tensor = file.get_tensor(KEY_MAP["mlp_norm_weight"].replace('*', str(i)))
                 mlp_norm = ChattyNorm(type=self.norm_type, weight=mlp_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
@@ -227,22 +228,37 @@ class ChattyModel(ChattyObject):
                 this_layer = ChattyTransformerLayer(
                     layer_idx=i, 
                     attn_layer=ChattyAttnLayer(q_proj=q_proj, k_proj=k_proj, v_proj=v_proj, o_proj=o_proj, q_norm=q_norm, k_norm=k_norm, norm=attn_norm),
-                    ffn_layer=ChattyFfnLayer(up_proj=up_proj, gate_proj=gate_proj, down_proj=down_proj, norm=mlp_norm, act_layer=ChattyActLayer())
+                    ffn_layer=ChattyFfnLayer(up_proj=up_proj, gate_proj=gate_proj, down_proj=down_proj, norm=mlp_norm, act_layer=str2act_layer(self.act_algo))
                 )
                 transformer_layers.append(this_layer)
+            self.transformer_layers = transformer_layers
 
             output_norm_weight_tensor = file.get_tensor(KEY_MAP["output_norm_weight"].replace('*', str(i)))
             output_norm = ChattyNorm(type=self.norm_type, weight=output_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+            self.output_norm = output_norm
 
             if self.tie_word_embeddings:
                 output_embed = input_embed
             else:
                 output_embed_weight_tensor = file.get_tensor(KEY_MAP["output_embed_weight"].replace('*', str(i)))
                 output_embed = ChattyLinearLayer(weight=output_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+            self.output_embed = output_embed
 
-    def build(self, builder=None):
-        if builder is None:
-            builder = flatbuffers.Builder(0)
+    def build(self):
+        builder = flatbuffers.Builder(0)
+
+        input_embed = self.input_embed.build(builder)
+
+        # ============== Build layers ==============
+        built_layers = []
+        for i in range(self.num_layers):
+            layer = self.transformer_layers[i].build(builder)
+            built_layers.append(layer)
+        FbsModel.StartLayersVector(builder, self.num_layers)
+        # Prepend layers backward
+        for l in reversed(built_layers):
+            builder.PrependUOffsetTRelative(l)
+        layers = builder.EndVector()
         
         # ============== Build finish ==============
         model = super().build()

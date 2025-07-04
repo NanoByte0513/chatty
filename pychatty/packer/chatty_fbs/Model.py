@@ -25,8 +25,22 @@ class Model(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Model
-    def Tokenizer(self, j):
+    def Name(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Model
+    def ModelType(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Model
+    def Tokenizer(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Int8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
@@ -34,47 +48,25 @@ class Model(object):
 
     # Model
     def TokenizerAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Int8Flags, o)
         return 0
 
     # Model
     def TokenizerLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Model
     def TokenizerIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
     # Model
     def InputEmbed(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
-        if o != 0:
-            x = self._tab.Indirect(o + self._tab.Pos)
-            from chatty_fbs.LinearLayer import LinearLayer
-            obj = LinearLayer()
-            obj.Init(self._tab.Bytes, x)
-            return obj
-        return None
-
-    # Model
-    def OutputNorm(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            x = self._tab.Indirect(o + self._tab.Pos)
-            from chatty_fbs.Norm import Norm
-            obj = Norm()
-            obj.Init(self._tab.Bytes, x)
-            return obj
-        return None
-
-    # Model
-    def OutputEmbed(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
@@ -85,8 +77,30 @@ class Model(object):
         return None
 
     # Model
-    def Layers(self, j):
+    def OutputNorm(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            x = self._tab.Indirect(o + self._tab.Pos)
+            from chatty_fbs.Norm import Norm
+            obj = Norm()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Model
+    def OutputEmbed(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            x = self._tab.Indirect(o + self._tab.Pos)
+            from chatty_fbs.LinearLayer import LinearLayer
+            obj = LinearLayer()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Model
+    def Layers(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
@@ -99,45 +113,57 @@ class Model(object):
 
     # Model
     def LayersLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Model
     def LayersIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         return o == 0
 
     # Model
     def HeadDim(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # Model
     def KvNumHeads(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
     # Model
     def QNumHeads(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return 0
 
 def ModelStart(builder):
-    builder.StartObject(8)
+    builder.StartObject(10)
 
 def Start(builder):
     ModelStart(builder)
 
+def ModelAddName(builder, name):
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+
+def AddName(builder, name):
+    ModelAddName(builder, name)
+
+def ModelAddModelType(builder, modelType):
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(modelType), 0)
+
+def AddModelType(builder, modelType):
+    ModelAddModelType(builder, modelType)
+
 def ModelAddTokenizer(builder, tokenizer):
-    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(tokenizer), 0)
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(tokenizer), 0)
 
 def AddTokenizer(builder, tokenizer):
     ModelAddTokenizer(builder, tokenizer)
@@ -149,25 +175,25 @@ def StartTokenizerVector(builder, numElems):
     return ModelStartTokenizerVector(builder, numElems)
 
 def ModelAddInputEmbed(builder, inputEmbed):
-    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(inputEmbed), 0)
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(inputEmbed), 0)
 
 def AddInputEmbed(builder, inputEmbed):
     ModelAddInputEmbed(builder, inputEmbed)
 
 def ModelAddOutputNorm(builder, outputNorm):
-    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(outputNorm), 0)
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(outputNorm), 0)
 
 def AddOutputNorm(builder, outputNorm):
     ModelAddOutputNorm(builder, outputNorm)
 
 def ModelAddOutputEmbed(builder, outputEmbed):
-    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(outputEmbed), 0)
+    builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(outputEmbed), 0)
 
 def AddOutputEmbed(builder, outputEmbed):
     ModelAddOutputEmbed(builder, outputEmbed)
 
 def ModelAddLayers(builder, layers):
-    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(layers), 0)
+    builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(layers), 0)
 
 def AddLayers(builder, layers):
     ModelAddLayers(builder, layers)
@@ -179,19 +205,19 @@ def StartLayersVector(builder, numElems):
     return ModelStartLayersVector(builder, numElems)
 
 def ModelAddHeadDim(builder, headDim):
-    builder.PrependInt32Slot(5, headDim, 0)
+    builder.PrependInt32Slot(7, headDim, 0)
 
 def AddHeadDim(builder, headDim):
     ModelAddHeadDim(builder, headDim)
 
 def ModelAddKvNumHeads(builder, kvNumHeads):
-    builder.PrependInt32Slot(6, kvNumHeads, 0)
+    builder.PrependInt32Slot(8, kvNumHeads, 0)
 
 def AddKvNumHeads(builder, kvNumHeads):
     ModelAddKvNumHeads(builder, kvNumHeads)
 
 def ModelAddQNumHeads(builder, qNumHeads):
-    builder.PrependInt32Slot(7, qNumHeads, 0)
+    builder.PrependInt32Slot(9, qNumHeads, 0)
 
 def AddQNumHeads(builder, qNumHeads):
     ModelAddQNumHeads(builder, qNumHeads)
@@ -214,6 +240,8 @@ class ModelT(object):
 
     # ModelT
     def __init__(self):
+        self.name = None  # type: str
+        self.modelType = None  # type: str
         self.tokenizer = None  # type: List[int]
         self.inputEmbed = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
         self.outputNorm = None  # type: Optional[chatty_fbs.Norm.NormT]
@@ -244,6 +272,8 @@ class ModelT(object):
     def _UnPack(self, model):
         if model is None:
             return
+        self.name = model.Name()
+        self.modelType = model.ModelType()
         if not model.TokenizerIsNone():
             if np is None:
                 self.tokenizer = []
@@ -271,6 +301,10 @@ class ModelT(object):
 
     # ModelT
     def Pack(self, builder):
+        if self.name is not None:
+            name = builder.CreateString(self.name)
+        if self.modelType is not None:
+            modelType = builder.CreateString(self.modelType)
         if self.tokenizer is not None:
             if np is not None and type(self.tokenizer) is np.ndarray:
                 tokenizer = builder.CreateNumpyVector(self.tokenizer)
@@ -294,6 +328,10 @@ class ModelT(object):
                 builder.PrependUOffsetTRelative(layerslist[i])
             layers = builder.EndVector()
         ModelStart(builder)
+        if self.name is not None:
+            ModelAddName(builder, name)
+        if self.modelType is not None:
+            ModelAddModelType(builder, modelType)
         if self.tokenizer is not None:
             ModelAddTokenizer(builder, tokenizer)
         if self.inputEmbed is not None:
