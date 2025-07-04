@@ -161,19 +161,21 @@ enum ActLayer : int8_t {
   ActLayer_NONE = 0,
   ActLayer_RELU = 1,
   ActLayer_GELU = 2,
-  ActLayer_SWISH = 3,
-  ActLayer_SIGMOID = 4,
-  ActLayer_TANH = 5,
-  ActLayer_SOFTMAX = 6,
+  ActLayer_SILU = 3,
+  ActLayer_SWISH = 4,
+  ActLayer_SIGMOID = 5,
+  ActLayer_TANH = 6,
+  ActLayer_SOFTMAX = 7,
   ActLayer_MIN = ActLayer_NONE,
   ActLayer_MAX = ActLayer_SOFTMAX
 };
 
-inline const ActLayer (&EnumValuesActLayer())[7] {
+inline const ActLayer (&EnumValuesActLayer())[8] {
   static const ActLayer values[] = {
     ActLayer_NONE,
     ActLayer_RELU,
     ActLayer_GELU,
+    ActLayer_SILU,
     ActLayer_SWISH,
     ActLayer_SIGMOID,
     ActLayer_TANH,
@@ -183,10 +185,11 @@ inline const ActLayer (&EnumValuesActLayer())[7] {
 }
 
 inline const char * const *EnumNamesActLayer() {
-  static const char * const names[8] = {
+  static const char * const names[9] = {
     "NONE",
     "RELU",
     "GELU",
+    "SILU",
     "SWISH",
     "SIGMOID",
     "TANH",
@@ -452,7 +455,7 @@ struct Norm FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(type()) &&
            VerifyOffsetRequired(verifier, VT_WEIGHT) &&
            verifier.VerifyTable(weight()) &&
-           VerifyOffsetRequired(verifier, VT_BIAS) &&
+           VerifyOffset(verifier, VT_BIAS) &&
            verifier.VerifyTable(bias()) &&
            VerifyField<float>(verifier, VT_EPSILON, 4) &&
            VerifyOffset(verifier, VT_SCALE_X) &&
@@ -494,7 +497,6 @@ struct NormBuilder {
     auto o = ::flatbuffers::Offset<Norm>(end);
     fbb_.Required(o, Norm::VT_TYPE);
     fbb_.Required(o, Norm::VT_WEIGHT);
-    fbb_.Required(o, Norm::VT_BIAS);
     return o;
   }
 };
@@ -567,7 +569,7 @@ struct LinearLayer FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_WEIGHT) &&
            verifier.VerifyTable(weight()) &&
-           VerifyOffsetRequired(verifier, VT_BIAS) &&
+           VerifyOffset(verifier, VT_BIAS) &&
            verifier.VerifyTable(bias()) &&
            VerifyField<int8_t>(verifier, VT_ACT_BITS, 1) &&
            VerifyOffset(verifier, VT_SCALE_X) &&
@@ -605,7 +607,6 @@ struct LinearLayerBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<LinearLayer>(end);
     fbb_.Required(o, LinearLayer::VT_WEIGHT);
-    fbb_.Required(o, LinearLayer::VT_BIAS);
     return o;
   }
 };
@@ -908,7 +909,7 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return ModelTypeTable();
   }
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_TOKENIZERS = 4,
+    VT_TOKENIZER = 4,
     VT_INPUT_EMBED = 6,
     VT_OUTPUT_NORM = 8,
     VT_OUTPUT_EMBED = 10,
@@ -917,8 +918,8 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_KV_NUM_HEADS = 16,
     VT_Q_NUM_HEADS = 18
   };
-  const ::flatbuffers::Vector<int8_t> *tokenizers() const {
-    return GetPointer<const ::flatbuffers::Vector<int8_t> *>(VT_TOKENIZERS);
+  const ::flatbuffers::Vector<int8_t> *tokenizer() const {
+    return GetPointer<const ::flatbuffers::Vector<int8_t> *>(VT_TOKENIZER);
   }
   const chatty_fbs::LinearLayer *input_embed() const {
     return GetPointer<const chatty_fbs::LinearLayer *>(VT_INPUT_EMBED);
@@ -943,8 +944,8 @@ struct Model FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffsetRequired(verifier, VT_TOKENIZERS) &&
-           verifier.VerifyVector(tokenizers()) &&
+           VerifyOffsetRequired(verifier, VT_TOKENIZER) &&
+           verifier.VerifyVector(tokenizer()) &&
            VerifyOffsetRequired(verifier, VT_INPUT_EMBED) &&
            verifier.VerifyTable(input_embed()) &&
            VerifyOffsetRequired(verifier, VT_OUTPUT_NORM) &&
@@ -965,8 +966,8 @@ struct ModelBuilder {
   typedef Model Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_tokenizers(::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizers) {
-    fbb_.AddOffset(Model::VT_TOKENIZERS, tokenizers);
+  void add_tokenizer(::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizer) {
+    fbb_.AddOffset(Model::VT_TOKENIZER, tokenizer);
   }
   void add_input_embed(::flatbuffers::Offset<chatty_fbs::LinearLayer> input_embed) {
     fbb_.AddOffset(Model::VT_INPUT_EMBED, input_embed);
@@ -996,7 +997,7 @@ struct ModelBuilder {
   ::flatbuffers::Offset<Model> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Model>(end);
-    fbb_.Required(o, Model::VT_TOKENIZERS);
+    fbb_.Required(o, Model::VT_TOKENIZER);
     fbb_.Required(o, Model::VT_INPUT_EMBED);
     fbb_.Required(o, Model::VT_OUTPUT_NORM);
     fbb_.Required(o, Model::VT_LAYERS);
@@ -1006,7 +1007,7 @@ struct ModelBuilder {
 
 inline ::flatbuffers::Offset<Model> CreateModel(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizers = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<int8_t>> tokenizer = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> input_embed = 0,
     ::flatbuffers::Offset<chatty_fbs::Norm> output_norm = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> output_embed = 0,
@@ -1022,13 +1023,13 @@ inline ::flatbuffers::Offset<Model> CreateModel(
   builder_.add_output_embed(output_embed);
   builder_.add_output_norm(output_norm);
   builder_.add_input_embed(input_embed);
-  builder_.add_tokenizers(tokenizers);
+  builder_.add_tokenizer(tokenizer);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<Model> CreateModelDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<int8_t> *tokenizers = nullptr,
+    const std::vector<int8_t> *tokenizer = nullptr,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> input_embed = 0,
     ::flatbuffers::Offset<chatty_fbs::Norm> output_norm = 0,
     ::flatbuffers::Offset<chatty_fbs::LinearLayer> output_embed = 0,
@@ -1036,11 +1037,11 @@ inline ::flatbuffers::Offset<Model> CreateModelDirect(
     int32_t head_dim = 0,
     int32_t kv_num_heads = 0,
     int32_t q_num_heads = 0) {
-  auto tokenizers__ = tokenizers ? _fbb.CreateVector<int8_t>(*tokenizers) : 0;
+  auto tokenizer__ = tokenizer ? _fbb.CreateVector<int8_t>(*tokenizer) : 0;
   auto layers__ = layers ? _fbb.CreateVector<::flatbuffers::Offset<chatty_fbs::TransformerLayer>>(*layers) : 0;
   return chatty_fbs::CreateModel(
       _fbb,
-      tokenizers__,
+      tokenizer__,
       input_embed,
       output_norm,
       output_embed,
@@ -1122,6 +1123,7 @@ inline const ::flatbuffers::TypeTable *ActLayerTypeTable() {
     { ::flatbuffers::ET_CHAR, 0, 0 },
     { ::flatbuffers::ET_CHAR, 0, 0 },
     { ::flatbuffers::ET_CHAR, 0, 0 },
+    { ::flatbuffers::ET_CHAR, 0, 0 },
     { ::flatbuffers::ET_CHAR, 0, 0 }
   };
   static const ::flatbuffers::TypeFunction type_refs[] = {
@@ -1131,13 +1133,14 @@ inline const ::flatbuffers::TypeTable *ActLayerTypeTable() {
     "NONE",
     "RELU",
     "GELU",
+    "SILU",
     "SWISH",
     "SIGMOID",
     "TANH",
     "SOFTMAX"
   };
   static const ::flatbuffers::TypeTable tt = {
-    ::flatbuffers::ST_ENUM, 7, type_codes, type_refs, nullptr, nullptr, names
+    ::flatbuffers::ST_ENUM, 8, type_codes, type_refs, nullptr, nullptr, names
   };
   return &tt;
 }
@@ -1337,7 +1340,7 @@ inline const ::flatbuffers::TypeTable *ModelTypeTable() {
     chatty_fbs::TransformerLayerTypeTable
   };
   static const char * const names[] = {
-    "tokenizers",
+    "tokenizer",
     "input_embed",
     "output_norm",
     "output_embed",

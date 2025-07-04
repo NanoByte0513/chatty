@@ -1,7 +1,8 @@
 import json
+import os
 
 def read_tokenizer(path:str):
-    tokenizer = json.load(open(path))
+    tokenizer = json.load(open(os.path.join(path, "tokenizer.json")))
     tokenizer_type = tokenizer["model"]["type"].upper()
     if tokenizer_type == "BPE":
         return read_bpe(tokenizer)
@@ -35,6 +36,6 @@ def read_bpe(raw_tokenizer:dict):
     tokenizer["specials"] = specials
 
     # Regex
-    tokenizer["regex"] = tokenizer["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"]
+    tokenizer["regex"] = raw_tokenizer["pre_tokenizer"]["pretokenizers"][0]["pattern"]["Regex"]
 
     return tokenizer

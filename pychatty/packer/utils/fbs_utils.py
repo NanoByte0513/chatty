@@ -14,10 +14,12 @@ from ..chatty_fbs.Tensor import Tensor as FbsTensor
 from ..chatty_fbs.ScaleInfo import ScaleInfo as FbsScaleInfo
 from ..chatty_fbs.DType import DType as FbsDType
 from ..chatty_fbs.ActivationBits import ActivationBits as FbsActivationBits
+from .key_map import *
 from .config import read_config
 from .tokenizer import read_tokenizer
 from safetensors import safe_open
 
+DATA_SIZE = 0
 
 def torch_dtype2dtype(torch_dtype: torch.dtype):
     pass
@@ -25,7 +27,7 @@ def torch_dtype2dtype(torch_dtype: torch.dtype):
 class ChattyObject():
     def __init__(self, **kwarg):
         for k, v in kwarg.items():
-            self.k = v
+            setattr(self, k, v)
 
     def build(self, builder=None, **kwargs):
         pass
@@ -37,6 +39,14 @@ class ChattyScaleInfo(ChattyObject):
 
     def build(self, builder=None):
         return super().build()
+
+
+class ChattyActLayer(ChattyObject):
+    def __init__(self):
+        super().__init__()
+
+    def build(self, builder=None):
+        return super().build() 
 
 
 class ChattyTensor(ChattyObject):
@@ -69,38 +79,166 @@ class ChattyNorm(ChattyObject):
         return super().build()
 
 
+class ChattyLinearLayer(ChattyObject):
+    def __init__(self, **kwarg):
+        super().__init__(**kwarg)
+
+    def build(self, builder=None):
+        if builder is None:
+            builder = flatbuffers.Builder(0)
+        
+        return super().build()
+
+
+class ChattyTransformerLayer(ChattyObject):
+    def __init__(self, **kwarg):
+        super().__init__(**kwarg)
+
+    def build(self, builder=None):
+        if builder is None:
+            builder = flatbuffers.Builder(0)
+        
+        return super().build()
+
+
+class ChattyAttnLayer(ChattyObject):
+    def __init__(self, **kwarg):
+        super().__init__(**kwarg)
+
+    def build(self, builder=None):
+        if builder is None:
+            builder = flatbuffers.Builder(0)
+        
+        return super().build()
+
+
+class ChattyFfnLayer(ChattyObject):
+    def __init__(self, **kwarg):
+        super().__init__(**kwarg)
+
+    def build(self, builder=None):
+        if builder is None:
+            builder = flatbuffers.Builder(0)
+        
+        return super().build()
+
+
 class ChattyModel(ChattyObject):
     def __init__(self, model_path:str, output_path:str):
-        model_config = read_config(os.path.join(model_path, "config.json"))
+        model_config = read_config(model_path)
+        # Model architecture params
+        model_type          = model_config["model_type"]
+        num_layers          = model_config["num_layers"]
+        hidden_size         = model_config["hidden_size"]
+        rope_theta          = model_config["rope_theta"]
+        weight_dtype        = model_config["weight_dtype"]
+        tie_word_embeddings = model_config["tie_word_embeddings"] 
+        # Tokenizer params
+        vocab_size          = model_config["vocab_size"]
+        bos_tokens          = model_config["bos_tokens"]
+        eos_tokens          = model_config["eos_tokens"]
+        # Attention params
+        attention_bias      = model_config["attention_bias"]
+        q_num_heads         = model_config["q_num_heads"]
+        kv_num_heads        = model_config["kv_num_heads"]
+        head_dim            = model_config["head_dim"]
+        # FFN params
+        intermediate_size   = model_config["intermediate_size"]
+        act_algo            = model_config["act_algo"]
+        # Norm params
+        norm_type           = model_config["norm_type"]
+        epsilon             = model_config["epsilon"]
+
         safetensors_files = []
         for name in os.listdir(model_path):
             full_path = os.path.join(model_path, name)
             if os.path.isfile(full_path) and name.endswith(".safetensors"):
                 safetensors_files.append(full_path)
-        tokenizer_path = os.path.join(model_path, "config.json")
+        if len(safetensors_files) > 1:
+            # TODO: Read tensor index json
+            pass
         
-        # Model architecture params
-        num_layers = model_config["num_layers"]
-        hidden_size = model_config["hidden_size"]
-        rope_theta = model_config["rope_theta"]
-        weight_dtype = model_config["weight_dtype"]
-        tie_word_embeddings = model_config["tie_word_embeddings"] 
-        # Tokenizer params
-        vocab_size = model_config["vocab_size"]
-        bos_tokens = model_config["bos_tokens"]
-        eos_tokens = model_config["eos_tokens"]
-        # Attention params
-        attention_bias = model_config["attention_bias"]
-        q_num_heads = model_config["q_num_heads"]
-        kv_num_heads = model_config["kv_num_heads"]
-        head_dim = model_config["head_dim"]
-        # FFN params
-        intermediate_size = model_config["intermediate_size"]
-        act_algo = model_config["act_algo"]
-        # Norm params
-        norm_type = model_config["norm_type"]
-        epsilon = model_config["epsilon"]
-        super().__init__(output_path=output_path)
+        tokenizer = read_tokenizer(model_path)
+
+        super().__init__(safetensors_files=safetensors_files, tokenizer=tokenizer, 
+                         model_type=model_type, num_layers=num_layers, hidden_size=hidden_size, rope_theta=rope_theta, 
+                         weight_dtype=weight_dtype, tie_word_embeddings=tie_word_embeddings,
+                         vocab_size=vocab_size, bos_tokens=bos_tokens, eos_tokens=eos_tokens,
+                         attention_bias=attention_bias, q_num_heads=q_num_heads, kv_num_heads=kv_num_heads, head_dim=head_dim,
+                         intermediate_size=intermediate_size, act_algo=act_algo, norm_type=norm_type, epsilon=epsilon,
+                         output_path=output_path)
+        self.read_tensor_info()
+
+    def read_tensor_info(self):
+        if self.model_type == "qwen3":
+            KEY_MAP = QWEN3_MAP
+        else:
+            raise
+        
+        # TODO: More than one safetensors file
+        with safe_open(self.safetensors_files[0], framework='pt', device='cpu') as file:
+            input_embed_weight_tensor = file.get_tensor(KEY_MAP["input_embed_weight"])
+            input_embed = ChattyLinearLayer(weight=input_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+            transformer_layers = []
+            for i in range(self.num_layers):
+                attn_norm_weight_tensor = file.get_tensor(KEY_MAP["attn_norm_weight"].replace('*', str(i)))
+                attn_norm = ChattyNorm(type=self.norm_type, weight=attn_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                
+                q_proj_weight_tensor = file.get_tensor(KEY_MAP["q_proj_weight"].replace('*', str(i)))
+                q_proj = ChattyLinearLayer(weight=q_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                k_proj_weight_tensor = file.get_tensor(KEY_MAP["k_proj_weight"].replace('*', str(i)))
+                k_proj = ChattyLinearLayer(weight=k_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                v_proj_weight_tensor = file.get_tensor(KEY_MAP["v_proj_weight"].replace('*', str(i)))
+                v_proj = ChattyLinearLayer(weight=v_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                o_proj_weight_tensor = file.get_tensor(KEY_MAP["o_proj_weight"].replace('*', str(i)))
+                o_proj = ChattyLinearLayer(weight=o_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                q_norm_weight_tensor = file.get_tensor(KEY_MAP["q_norm_weight"].replace('*', str(i)))
+                q_norm = ChattyNorm(type=self.norm_type, weight=q_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+
+                k_norm_weight_tensor = file.get_tensor(KEY_MAP["k_norm_weight"].replace('*', str(i)))
+                k_norm = ChattyNorm(type=self.norm_type, weight=k_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+                # TODO: Attention bias
+                if self.attention_bias:
+                    q_proj_bias_tensor = None
+                    k_proj_bias_tensor = None
+                    v_proj_bias_tensor = None
+                else:
+                    q_proj_bias_tensor = None
+                    k_proj_bias_tensor = None
+                    v_proj_bias_tensor = None
+
+                mlp_norm_weight_tensor = file.get_tensor(KEY_MAP["mlp_norm_weight"].replace('*', str(i)))
+                mlp_norm = ChattyNorm(type=self.norm_type, weight=mlp_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+
+                up_proj_weight_tensor = file.get_tensor(KEY_MAP["up_proj_weight"].replace('*', str(i)))
+                up_proj = ChattyLinearLayer(weight=up_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                gate_proj_weight_tensor = file.get_tensor(KEY_MAP["gate_proj_weight"].replace('*', str(i)))
+                gate_proj = ChattyLinearLayer(weight=gate_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                down_proj_weight_tensor = file.get_tensor(KEY_MAP["down_proj_weight"].replace('*', str(i)))
+                down_proj = ChattyLinearLayer(weight=down_proj_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
+
+                this_layer = ChattyTransformerLayer(
+                    layer_idx=i, 
+                    attn_layer=ChattyAttnLayer(q_proj=q_proj, k_proj=k_proj, v_proj=v_proj, o_proj=o_proj, q_norm=q_norm, k_norm=k_norm, norm=attn_norm),
+                    ffn_layer=ChattyFfnLayer(up_proj=up_proj, gate_proj=gate_proj, down_proj=down_proj, norm=mlp_norm, act_layer=ChattyActLayer())
+                )
+                transformer_layers.append(this_layer)
+
+            output_norm_weight_tensor = file.get_tensor(KEY_MAP["output_norm_weight"].replace('*', str(i)))
+            output_norm = ChattyNorm(type=self.norm_type, weight=output_norm_weight_tensor, bias=None, epsilon=self.epsilon, scale_x=None, scale_o=None)
+
+            if self.tie_word_embeddings:
+                output_embed = input_embed
+            else:
+                output_embed_weight_tensor = file.get_tensor(KEY_MAP["output_embed_weight"].replace('*', str(i)))
+                output_embed = ChattyLinearLayer(weight=output_embed_weight_tensor, bias=None, act_bits=None, scale_x=None, scale_o=None)
 
     def build(self, builder=None):
         if builder is None:

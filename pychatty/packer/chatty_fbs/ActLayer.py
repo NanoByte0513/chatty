@@ -6,7 +6,8 @@ class ActLayer(object):
     NONE = 0
     RELU = 1
     GELU = 2
-    SWISH = 3
-    SIGMOID = 4
-    TANH = 5
-    SOFTMAX = 6
+    SILU = 3
+    SWISH = 4
+    SIGMOID = 5
+    TANH = 6
+    SOFTMAX = 7

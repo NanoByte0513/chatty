@@ -1,7 +1,8 @@
 import json
+import os
 
-def read_config(config_path:str) -> dict:
-    cfg_dict = json.load(open(config_path))
+def read_config(path:str) -> dict:
+    cfg_dict = json.load(open(os.path.join(path, "config.json")))
     model_type = cfg_dict["model_type"]
     if model_type == "qwen3":
         return read_qwen3(cfg_dict)
@@ -10,6 +11,7 @@ def read_config(config_path:str) -> dict:
 
 def read_qwen3(cfg:dict):
     qwen3_cfg = {}
+    qwen3_cfg["model_type"] = "qwen3"
     # Model architecture params
     qwen3_cfg["num_layers"]          = cfg["num_hidden_layers"]
     qwen3_cfg["hidden_size"]         = cfg["hidden_size"]

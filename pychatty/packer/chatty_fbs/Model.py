@@ -25,7 +25,7 @@ class Model(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Model
-    def Tokenizers(self, j):
+    def Tokenizer(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             a = self._tab.Vector(o)
@@ -33,21 +33,21 @@ class Model(object):
         return 0
 
     # Model
-    def TokenizersAsNumpy(self):
+    def TokenizerAsNumpy(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Int8Flags, o)
         return 0
 
     # Model
-    def TokenizersLength(self):
+    def TokenizerLength(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Model
-    def TokenizersIsNone(self):
+    def TokenizerIsNone(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
@@ -136,17 +136,17 @@ def ModelStart(builder):
 def Start(builder):
     ModelStart(builder)
 
-def ModelAddTokenizers(builder, tokenizers):
-    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(tokenizers), 0)
+def ModelAddTokenizer(builder, tokenizer):
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(tokenizer), 0)
 
-def AddTokenizers(builder, tokenizers):
-    ModelAddTokenizers(builder, tokenizers)
+def AddTokenizer(builder, tokenizer):
+    ModelAddTokenizer(builder, tokenizer)
 
-def ModelStartTokenizersVector(builder, numElems):
+def ModelStartTokenizerVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
-def StartTokenizersVector(builder, numElems):
-    return ModelStartTokenizersVector(builder, numElems)
+def StartTokenizerVector(builder, numElems):
+    return ModelStartTokenizerVector(builder, numElems)
 
 def ModelAddInputEmbed(builder, inputEmbed):
     builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(inputEmbed), 0)
@@ -214,7 +214,7 @@ class ModelT(object):
 
     # ModelT
     def __init__(self):
-        self.tokenizers = None  # type: List[int]
+        self.tokenizer = None  # type: List[int]
         self.inputEmbed = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
         self.outputNorm = None  # type: Optional[chatty_fbs.Norm.NormT]
         self.outputEmbed = None  # type: Optional[chatty_fbs.LinearLayer.LinearLayerT]
@@ -244,13 +244,13 @@ class ModelT(object):
     def _UnPack(self, model):
         if model is None:
             return
-        if not model.TokenizersIsNone():
+        if not model.TokenizerIsNone():
             if np is None:
-                self.tokenizers = []
-                for i in range(model.TokenizersLength()):
-                    self.tokenizers.append(model.Tokenizers(i))
+                self.tokenizer = []
+                for i in range(model.TokenizerLength()):
+                    self.tokenizer.append(model.Tokenizer(i))
             else:
-                self.tokenizers = model.TokenizersAsNumpy()
+                self.tokenizer = model.TokenizerAsNumpy()
         if model.InputEmbed() is not None:
             self.inputEmbed = chatty_fbs.LinearLayer.LinearLayerT.InitFromObj(model.InputEmbed())
         if model.OutputNorm() is not None:
@@ -271,14 +271,14 @@ class ModelT(object):
 
     # ModelT
     def Pack(self, builder):
-        if self.tokenizers is not None:
-            if np is not None and type(self.tokenizers) is np.ndarray:
-                tokenizers = builder.CreateNumpyVector(self.tokenizers)
+        if self.tokenizer is not None:
+            if np is not None and type(self.tokenizer) is np.ndarray:
+                tokenizer = builder.CreateNumpyVector(self.tokenizer)
             else:
-                ModelStartTokenizersVector(builder, len(self.tokenizers))
-                for i in reversed(range(len(self.tokenizers))):
-                    builder.PrependByte(self.tokenizers[i])
-                tokenizers = builder.EndVector()
+                ModelStartTokenizerVector(builder, len(self.tokenizer))
+                for i in reversed(range(len(self.tokenizer))):
+                    builder.PrependByte(self.tokenizer[i])
+                tokenizer = builder.EndVector()
         if self.inputEmbed is not None:
             inputEmbed = self.inputEmbed.Pack(builder)
         if self.outputNorm is not None:
@@ -294,8 +294,8 @@ class ModelT(object):
                 builder.PrependUOffsetTRelative(layerslist[i])
             layers = builder.EndVector()
         ModelStart(builder)
-        if self.tokenizers is not None:
-            ModelAddTokenizers(builder, tokenizers)
+        if self.tokenizer is not None:
+            ModelAddTokenizer(builder, tokenizer)
         if self.inputEmbed is not None:
             ModelAddInputEmbed(builder, inputEmbed)
         if self.outputNorm is not None:
